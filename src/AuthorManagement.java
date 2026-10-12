@@ -1,7 +1,6 @@
 import java.io.*;
 import java.util.Scanner;
 
-//updated the delete author section
 public class AuthorManagement {
     private static final String FILE_NAME = "authors.txt";
 
