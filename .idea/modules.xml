@@ -2,7 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+<<<<<<< HEAD
       <module fileurl="file://$PROJECT_DIR$/bmanagement.iml" filepath="$PROJECT_DIR$/bmanagement.iml" />
+=======
+      <module fileurl="file://$PROJECT_DIR$/UserPart.iml" filepath="$PROJECT_DIR$/UserPart.iml" />
+>>>>>>> 2a1a40fcff835972fafa01e38f1c391990ad59c6
     </modules>
   </component>
 </project>
