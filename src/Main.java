@@ -45,6 +45,7 @@ public class Main {
             System.out.println("2. Manage Orders");
             System.out.println("3. User Management");
             System.out.println("4. Publisher Management");
+            System.out.println("5. Review Management");
             System.out.println("0. Exit System");
             System.out.print("Enter Choice: ");
 
@@ -71,6 +72,9 @@ public class Main {
 
                 case 4:
                     PublisherManagement.showMenu();
+                    break;
+                case 5:
+                    ReviewManagement.showMenu();
                     break;
                 case 0:
                     System.out.println("Exiting System. Goodbye!");
