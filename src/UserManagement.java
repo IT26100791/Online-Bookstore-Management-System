@@ -10,11 +10,11 @@ public class UserManagement {
 
         while (choice != 0) {
             System.out.println("\n--- USER MANAGEMENT ---");
-            System.out.println("1. Register User");
-            System.out.println("2. View All Users");
-            System.out.println("3. Update User");
-            System.out.println("4. Delete User");
-            System.out.println("0. Back to Main Menu");
+            System.out.println("1. Register User");//option 1
+            System.out.println("2. View All Users");// option 2
+            System.out.println("3. Update User");//option 3
+            System.out.println("4. Delete User");//option 4
+            System.out.println("0. Back to Main Menu");//option 0
             System.out.print("Enter Choice: ");
 
             if (scanner.hasNextInt()) {
