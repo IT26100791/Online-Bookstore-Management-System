@@ -1,4 +1,36 @@
 import java.util.Scanner;
+<<<<<<< HEAD
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        int mainChoice = -1;
+
+        while (mainChoice != 0) {
+            System.out.println("\n=========================================");
+            System.out.println("       SYSTEM MAIN MENU                 ");
+            System.out.println("=========================================");
+            System.out.println("1. Book Inventory Management");
+            System.out.println("0. Exit Application");
+            System.out.print("Enter Choice: ");
+
+            if (scanner.hasNextInt()) {
+                mainChoice = scanner.nextInt();
+                scanner.nextLine(); // Clear buffer
+            } else {
+                System.out.println("Invalid input! Please enter a number.");
+                scanner.nextLine(); // Clear invalid token
+                continue;
+            }
+
+            switch (mainChoice) {
+                case 1:
+                    // Delegation to the BookManagement class
+                    BookManagement.showMenu();
+                    break;
+                case 0:
+                    System.out.println("Exiting system. Goodbye!");
+=======
 // updagted the main menu
 public class Main {
     public static void main(String[] args) {
@@ -12,6 +44,8 @@ public class Main {
             System.out.println("1. Author Management");
             System.out.println("2. Manage Orders");
             System.out.println("3. User Management");
+            System.out.println("4. Publisher Management");
+            System.out.println("5. Review Management");
             System.out.println("0. Exit System");
             System.out.print("Enter Choice: ");
 
@@ -35,8 +69,16 @@ public class Main {
                 case 3:
                     UserManagement.showMenu();
                     break;
+
+                case 4:
+                    PublisherManagement.showMenu();
+                    break;
+                case 5:
+                    ReviewManagement.showMenu();
+                    break;
                 case 0:
                     System.out.println("Exiting System. Goodbye!");
+>>>>>>> 2a1a40fcff835972fafa01e38f1c391990ad59c6
                     break;
                 default:
                     System.out.println("Invalid choice! Please select a valid option.");

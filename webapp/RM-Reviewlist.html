@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Books - Review List</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 27, 75, 0.85)),
+            url('https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=1920&auto=format&fit=crop') !important;
+            background-size: cover !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+            background-attachment: fixed !important;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #f8fafc;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 1rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .table-glass {
+            background: rgba(255, 255, 255, 0.03);
+            color: #f8fafc;
+        }
+
+        .table-glass th, .table-glass td {
+            background: transparent !important;
+            color: #f8fafc !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+    </style>
+</head>
+<body class="py-5">
+
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="Main_web_index.html" class="text-decoration-none text-white fs-4 fw-bold mb-1 d-inline-block">
+                <i class="fa-solid fa-book-open text-primary me-2"></i>AURA BOOKS
+            </a>
+            <h2 class="fw-bold text-white mb-0"><i class="fa-solid fa-star-half-stroke me-2 text-warning"></i>Review Management</h2>
+            <p class="text-white-50 small mb-0">View and manage customer reviews for books.</p>
+        </div>
+        <a href="Main_web_index.html" class="btn btn-outline-light btn-sm">
+            <i class="fa-solid fa-house me-1"></i>Home
+        </a>
+    </div>
+
+    <!-- Review List Table Card -->
+    <div class="glass-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="text-white m-0">Customer Reviews</h5>
+            <a href="RM-Addreview.html" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-plus me-1"></i>Add New Review
+            </a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-glass align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>#ID</th>
+                    <th>Book Title</th>
+                    <th>Reviewer</th>
+                    <th>Rating</th>
+                    <th>Comment</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>01</td>
+                    <td>Madol Duwa</td>
+                    <td>Kamal P.</td>
+                    <td>
+                                <span class="text-warning">
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star-half-stroke"></i>
+                                </span>
+                    </td>
+                    <td>An absolute classic masterpiece of Sri Lankan literature!</td>
+                    <td class="text-center">
+                        <a href="RM-Editreview.html" class="btn btn-sm btn-outline-info me-1"><i class="fa-solid fa-pen-to-square"></i></a>
+                        <button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
