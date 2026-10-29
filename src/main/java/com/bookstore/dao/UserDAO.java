@@ -52,6 +52,14 @@ public class UserDAO {
         }
         return null;
     }
+    // LOGIN check: returns the user if username + password match, else null
+    public synchronized User authenticate(String username, String password) throws IOException {
+        User u = findByUsername(username);
+        if (u != null && u.getPassword().equals(password)) {
+            return u;
+        }
+        return null;
+    }
 
     // CREATE (false if username already exists)
     public synchronized boolean add(User user) throws IOException {
