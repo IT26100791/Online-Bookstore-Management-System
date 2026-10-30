@@ -77,14 +77,20 @@
                 </a>
             </div>
 
-            <!-- අනිත් modules: ඒ අය Servlet හදපු පස්සේ මේ lines uncomment කරන්න -->
+            <!-- අනිත් modules සහ Review Management එක මෙහි එකතු කර ඇත -->
             <!--
             <div class="col-md-4"><a class="module-card" href="book"><i class="fa-solid fa-book"></i><h5>Book Management</h5></a></div>
             <div class="col-md-4"><a class="module-card" href="author"><i class="fa-solid fa-pen-nib"></i><h5>Author Management</h5></a></div>
             <div class="col-md-4"><a class="module-card" href="order"><i class="fa-solid fa-cart-shopping"></i><h5>Order Management</h5></a></div>
             <div class="col-md-4"><a class="module-card" href="publisher"><i class="fa-solid fa-building"></i><h5>Publisher Management</h5></a></div>
-            <div class="col-md-4"><a class="module-card" href="review"><i class="fa-solid fa-star"></i><h5>Review Management</h5></a></div>
             -->
+
+            <div class="col-md-4">
+                <a class="module-card" href="ReviewList.jsp">
+                    <i class="fa-solid fa-star"></i>
+                    <h5>Review Management</h5>
+                </a>
+            </div>
         </div>
     </div>
 </div>

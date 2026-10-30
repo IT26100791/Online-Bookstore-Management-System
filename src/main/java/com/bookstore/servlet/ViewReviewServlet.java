@@ -1,77 +1,35 @@
 package com.bookstore.servlet;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
+import com.bookstore.dao.ReviewDAO;
+import com.bookstore.model.Review;
+import com.bookstore.util.SessionUtil;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
 
-@WebServlet("/ViewReviewServlet")
+/** READ: lists all reviews, or only the reviews whose book title matches ?book=... */
+@WebServlet("/viewReviews")
 public class ViewReviewServlet extends HttpServlet {
 
-    private static final String FILE_NAME =
-            System.getProperty("user.home") + File.separator + "reviews.txt";
+    private final ReviewDAO dao = new ReviewDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        String search = request.getParameter("book");
+        boolean searching = search != null && !search.trim().isEmpty();
 
-        response.setContentType("text/html;charset=UTF-8");
-        PrintWriter out = response.getWriter();
+        List<Review> reviews = searching ? dao.searchByBook(search) : dao.getAll();
 
-        out.println("<html><head><title>Book Reviews</title></head><body>");
-        out.println("<h2>--- BOOK REVIEWS LOG ---</h2>");
-
-        File file = new File(FILE_NAME);
-        if (!file.exists()) {
-            out.println("<h3>No records found.</h3>");
-            out.println("<a href='AddReview.jsp'>Add Review</a></body></html>");
-            return;
-        }
-
-        out.println("<table border='1' cellpadding='6'>");
-        out.println("<tr><th>Review ID</th><th>Book</th><th>Rating</th><th>Comment</th><th>Actions</th></tr>");
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] data = line.split(",", 4);
-                if (data.length == 4) {
-                    String id = escape(data[0]);
-                    out.println("<tr>");
-                    out.println("<td>" + id + "</td>");
-                    out.println("<td>" + escape(data[1]) + "</td>");
-                    out.println("<td>" + escape(data[2]) + "/5</td>");
-                    out.println("<td>" + escape(data[3]) + "</td>");
-                    out.println("<td>");
-                    out.println("<a href='EditReview.jsp?reviewId=" + id + "'>Edit</a> ");
-                    out.println("<form action='DeleteReviewServlet' method='post' style='display:inline'"
-                            + " onsubmit=\"return confirm('Delete this review?');\">");
-                    out.println("<input type='hidden' name='reviewId' value='" + id + "'>");
-                    out.println("<button type='submit'>Delete</button>");
-                    out.println("</form>");
-                    out.println("</td>");
-                    out.println("</tr>");
-                }
-            }
-        } catch (IOException e) {
-            out.println("<p>Error reading records: " + escape(e.getMessage()) + "</p>");
-        }
-
-        out.println("</table>");
-        out.println("<p><a href='AddReview.jsp'>Add New Review</a></p>");
-        out.println("</body></html>");
-    }
-
-    // XSS වලින් ආරක්ෂා වෙන්න HTML escape කරනවා
-    private String escape(String s) {
-        if (s == null) return "";
-        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                .replace("\"", "&quot;").replace("'", "&#39;");
+        request.setAttribute("reviews", reviews);
+        request.setAttribute("search", searching ? search.trim() : "");
+        request.setAttribute("isAdmin", SessionUtil.isAdmin(request));
+        request.setAttribute("currentUser", SessionUtil.getUsername(request));
+        request.getRequestDispatcher("/ReviewList.jsp").forward(request, response);
     }
 }
