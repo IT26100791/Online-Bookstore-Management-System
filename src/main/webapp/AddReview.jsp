@@ -47,11 +47,11 @@
                         <label for="rating" class="form-label">Rating (1 to 5)</label>
                         <select class="form-select" id="rating" name="rating" required>
                             <option value="" selected disabled>Select rating</option>
-                            <option value="5">5 - Excellent</option>
-                            <option value="4">4 - Very Good</option>
-                            <option value="3">3 - Good</option>
-                            <option value="2">2 - Fair</option>
-                            <option value="1">1 - Poor</option>
+                            <option value="5">5 Excellent</option>
+                            <option value="4">4 Very Good</option>
+                            <option value="3">3 Good</option>
+                            <option value="2">2 Fair</option>
+                            <option value="1">1 Poor</option>
                         </select>
                     </div>
                     <div class="mb-4">
@@ -59,7 +59,8 @@
                         <textarea class="form-control" id="comment" name="comment" rows="3" placeholder="Write your review here..."></textarea>
                     </div>
                     <div class="d-flex justify-content-between align-items-center">
-                        <a href="RM-Reviewlist.jsp" class="btn btn-outline-light"><i class="fa-solid fa-arrow-left me-1"></i>Back</a>
+                        <!-- මෙහි Back ලින්ක් එක ReviewList.jsp ලෙස නිවැරදි කර ඇත -->
+                        <a href="ReviewList.jsp" class="btn btn-outline-light"><i class="fa-solid fa-arrow-left me-1"></i>Back</a>
                         <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-floppy-disk me-1"></i>Submit Review</button>
                     </div>
                 </form>

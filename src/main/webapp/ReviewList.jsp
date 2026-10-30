@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="java.io., java.util." %>
+<%@ page import="java.io.File, java.io.BufferedReader, java.io.FileReader, java.io.IOException, java.util.*" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +28,8 @@
         <div>
             <h2 class="fw-bold text-white mb-0"><i class="fa-solid fa-star-half-stroke me-2 text-warning"></i>Review Management</h2>
         </div>
-        <a href="RM-Addreview.jsp" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-1"></i>Add New Review</a>
+        <!-- මෙහි නම AddReview.jsp ලෙස නිවැරදි කර ඇත -->
+        <a href="AddReview.jsp" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-1"></i>Add New Review</a>
     </div>
 
     <div class="glass-card p-4">
@@ -61,7 +62,8 @@
                     <td><span class="text-warning"><%= data[2] %>/5 ⭐</span></td>
                     <td><%= data[3] %></td>
                     <td class="text-center">
-                        <a href="RM-Editreview.jsp?id=<%= data[0] %>" class="btn btn-sm btn-outline-info me-1"><i class="fa-solid fa-pen-to-square"></i></a>
+                        <!-- මෙහි නම EditReview.jsp ලෙස නිවැරදි කර ඇත -->
+                        <a href="EditReview.jsp?id=<%= data[0] %>" class="btn btn-sm btn-outline-info me-1"><i class="fa-solid fa-pen-to-square"></i></a>
                         <form action="DeleteReviewServlet" method="POST" style="display:inline;">
                             <input type="hidden" name="reviewId" value="<%= data[0] %>">
                             <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this review?');"><i class="fa-solid fa-trash"></i></button>
