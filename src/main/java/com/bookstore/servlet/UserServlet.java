@@ -6,6 +6,7 @@ import com.bookstore.model.User;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
+import java.io.File;
 import java.io.IOException;
 
 @WebServlet("/user")
@@ -15,8 +16,10 @@ public class UserServlet extends HttpServlet {
     @Override
     public void init() {
         String dir = getServletContext().getInitParameter("dataDir");
-        if (dir == null || dir.isEmpty()) {
-            dir = System.getProperty("user.home") + "/bookstore-data";
+        if (dir == null || dir.trim().isEmpty() || !new File(dir).exists()) {
+            File homeDir = new File(System.getProperty("user.home"), "bookstore-data");
+            if (!homeDir.exists()) homeDir.mkdirs();
+            dir = homeDir.getAbsolutePath();
         }
         dao = new UserDAO(dir);
     }
