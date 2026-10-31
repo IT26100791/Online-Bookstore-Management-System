@@ -1,0 +1,3 @@
+admin,admin123,Admin
+user,user123,Customer
+john,pass123,Customer

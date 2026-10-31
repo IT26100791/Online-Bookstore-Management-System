@@ -1,0 +1,4 @@
+REV-001,Java Programming,5,Outstanding comprehensive guide for software developers!
+REV-002,The Hobbit,5,An absolute fantasy masterpiece full of heart and adventure.
+REV-003,A Game of Thrones,4,Gripping characters and thrilling plot twists.
+REV-004,Harry Potter,5,Magical and enchanting from start to finish.
