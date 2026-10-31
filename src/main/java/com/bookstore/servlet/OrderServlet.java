@@ -6,9 +6,7 @@ import com.bookstore.model.Order;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
-import java.io.File;
 import java.io.IOException;
-import java.net.URLEncoder;
 
 @WebServlet("/order")
 public class OrderServlet extends HttpServlet {
@@ -17,10 +15,8 @@ public class OrderServlet extends HttpServlet {
     @Override
     public void init() {
         String dir = getServletContext().getInitParameter("dataDir");
-        if (dir == null || dir.trim().isEmpty() || !new File(dir).exists()) {
-            File homeDir = new File(System.getProperty("user.home"), "bookstore-data");
-            if (!homeDir.exists()) homeDir.mkdirs();
-            dir = homeDir.getAbsolutePath();
+        if (dir == null || dir.isEmpty()) {
+            dir = System.getProperty("user.home") + "/bookstore-data";
         }
         dao = new OrderDAO(dir);
     }
@@ -30,24 +26,34 @@ public class OrderServlet extends HttpServlet {
             throws ServletException, IOException {
         String action = req.getParameter("action");
         if (action == null) action = "list";
-        req.setAttribute("msg", req.getParameter("msg"));
 
-        switch (action) {
-            case "new":
-                req.getRequestDispatcher("/order-form.jsp").forward(req, resp);
-                break;
-            case "edit":
-                Order o = dao.findById(req.getParameter("id"));
-                if (o == null) {
-                    resp.sendRedirect("order?msg=Order+not+found");
-                    return;
-                }
-                req.setAttribute("order", o);
-                req.getRequestDispatcher("/order-form.jsp").forward(req, resp);
-                break;
-            default:
-                req.setAttribute("orders", dao.findAll());
-                req.getRequestDispatcher("/order-list.jsp").forward(req, resp);
+        try {
+            switch (action) {
+                case "new":
+                    req.setAttribute("msg", req.getParameter("msg"));
+                    req.getRequestDispatcher("/order-add.jsp").forward(req, resp);
+                    break;
+                case "edit":
+                    Order o = null;
+                    try {
+                        o = dao.findById(Integer.parseInt(req.getParameter("id")));
+                    } catch (NumberFormatException ignored) {
+                    }
+                    if (o == null) {
+                        resp.sendRedirect("order?msg=Order+not+found");
+                        return;
+                    }
+                    req.setAttribute("order", o);
+                    req.setAttribute("msg", req.getParameter("msg"));
+                    req.getRequestDispatcher("/order-edit.jsp").forward(req, resp);
+                    break;
+                default:
+                    req.setAttribute("orders", dao.findAll());
+                    req.setAttribute("msg", req.getParameter("msg"));
+                    req.getRequestDispatcher("/order-list.jsp").forward(req, resp);
+            }
+        } catch (IOException e) {
+            throw new ServletException(e);
         }
     }
 
@@ -56,50 +62,79 @@ public class OrderServlet extends HttpServlet {
             throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         String action = req.getParameter("action");
-        String id = trim(req.getParameter("id"));
         String customerName = trim(req.getParameter("customerName"));
         String bookTitle = trim(req.getParameter("bookTitle"));
         String status = trim(req.getParameter("status"));
+        if (status.isEmpty()) status = "Pending";
 
-        switch (action == null ? "" : action) {
-            case "add":
-            case "update": {
-                boolean isUpdate = "update".equals(action);
-                String back = isUpdate ? "order?action=edit&id=" + enc(id) : "order?action=new";
-
-                if (id.isEmpty() || customerName.isEmpty() || bookTitle.isEmpty() || status.isEmpty()) {
-                    resp.sendRedirect(back + "&msg=All+fields+are+required");
-                    return;
+        try {
+            switch (action == null ? "" : action) {
+                case "add": {
+                    int quantity;
+                    double total;
+                    try {
+                        quantity = Integer.parseInt(trim(req.getParameter("quantity")));
+                        total = Double.parseDouble(trim(req.getParameter("totalAmount")));
+                    } catch (NumberFormatException e) {
+                        resp.sendRedirect("order?action=new&msg=Invalid+quantity+or+amount");
+                        return;
+                    }
+                    if (!isValid(customerName, bookTitle, quantity, total)) {
+                        resp.sendRedirect("order?action=new&msg=Invalid+input");
+                        return;
+                    }
+                    dao.add(customerName, bookTitle, quantity, total, status);
+                    resp.sendRedirect("order?msg=Order+placed");
+                    break;
                 }
-                if (id.contains(",") || customerName.contains(",") || bookTitle.contains(",") || status.contains(",")) {
-                    resp.sendRedirect(back + "&msg=Commas+are+not+allowed");
-                    return;
+                case "update": {
+                    int id;
+                    int quantity;
+                    double total;
+                    try {
+                        id = Integer.parseInt(trim(req.getParameter("orderId")));
+                        quantity = Integer.parseInt(trim(req.getParameter("quantity")));
+                        total = Double.parseDouble(trim(req.getParameter("totalAmount")));
+                    } catch (NumberFormatException e) {
+                        resp.sendRedirect("order?msg=Invalid+input");
+                        return;
+                    }
+                    if (!isValid(customerName, bookTitle, quantity, total)) {
+                        resp.sendRedirect("order?action=edit&id=" + id + "&msg=Invalid+input");
+                        return;
+                    }
+                    boolean updated = dao.update(id, customerName, bookTitle, quantity, total, status);
+                    resp.sendRedirect("order?msg=" + (updated ? "Order+updated" : "Order+not+found"));
+                    break;
                 }
-
-                Order order = new Order(id, customerName, bookTitle, status);
-                if (isUpdate) {
-                    boolean ok = dao.update(order);
-                    resp.sendRedirect("order?msg=" + (ok ? "Order+updated" : "Order+not+found"));
-                } else {
-                    boolean ok = dao.add(order);
-                    resp.sendRedirect(ok ? "order?msg=Order+placed" : back + "&msg=Order+ID+already+exists");
+                case "delete": {
+                    int id;
+                    try {
+                        id = Integer.parseInt(trim(req.getParameter("orderId")));
+                    } catch (NumberFormatException e) {
+                        resp.sendRedirect("order?msg=Invalid+input");
+                        return;
+                    }
+                    boolean deleted = dao.delete(id);
+                    resp.sendRedirect("order?msg=" + (deleted ? "Order+deleted" : "Order+not+found"));
+                    break;
                 }
-                break;
+                default:
+                    resp.sendRedirect("order");
             }
-            case "delete":
-                boolean deleted = dao.delete(id);
-                resp.sendRedirect("order?msg=" + (deleted ? "Order+deleted" : "Order+not+found"));
-                break;
-            default:
-                resp.sendRedirect("order");
+        } catch (IOException e) {
+            throw new ServletException(e);
         }
+    }
+
+    // commas are rejected because orders.txt is comma-separated
+    private boolean isValid(String customerName, String bookTitle, int quantity, double total) {
+        return !customerName.isEmpty() && !bookTitle.isEmpty()
+                && !customerName.contains(",") && !bookTitle.contains(",")
+                && quantity > 0 && total >= 0;
     }
 
     private String trim(String s) {
         return s == null ? "" : s.trim();
-    }
-
-    private String enc(String s) throws IOException {
-        return URLEncoder.encode(s, "UTF-8");
     }
 }

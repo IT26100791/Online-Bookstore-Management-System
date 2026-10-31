@@ -23,43 +23,63 @@ public class OrderDAO {
         }
     }
 
+    // READ all
     public synchronized List<Order> findAll() throws IOException {
         List<Order> orders = new ArrayList<>();
         try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
             String line;
             while ((line = reader.readLine()) != null) {
-                String[] d = line.split(",", -1);
-                if (d.length >= 4) {
-                    orders.add(new Order(d[0].trim(), d[1].trim(), d[2].trim(), d[3].trim()));
+                String[] d = line.split(",");
+                if (d.length == 6) {
+                    try {
+                        orders.add(new Order(
+                                Integer.parseInt(d[0]),
+                                d[1],
+                                d[2],
+                                Integer.parseInt(d[3]),
+                                Double.parseDouble(d[4]),
+                                d[5]));
+                    } catch (NumberFormatException ignored) {
+                        // skip corrupted line
+                    }
                 }
             }
         }
         return orders;
     }
 
-    public synchronized Order findById(String id) throws IOException {
+    // READ one
+    public synchronized Order findById(int id) throws IOException {
         for (Order o : findAll()) {
-            if (o.getId().equalsIgnoreCase(id)) return o;
+            if (o.getOrderId() == id) return o;
         }
         return null;
     }
 
-    public synchronized boolean add(Order order) throws IOException {
-        if (findById(order.getId()) != null) return false;
+    // CREATE (id is generated automatically)
+    public synchronized Order add(String customerName, String bookTitle,
+                                  int quantity, double totalAmount, String status) throws IOException {
+        int nextId = 1;
+        for (Order o : findAll()) {
+            if (o.getOrderId() >= nextId) nextId = o.getOrderId() + 1;
+        }
+        Order order = new Order(nextId, customerName, bookTitle, quantity, totalAmount, status);
         try (BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8,
                 StandardOpenOption.APPEND)) {
             writer.write(order.toFileLine());
             writer.newLine();
         }
-        return true;
+        return order;
     }
 
-    public synchronized boolean update(Order updated) throws IOException {
+    // UPDATE
+    public synchronized boolean update(int id, String customerName, String bookTitle,
+                                       int quantity, double totalAmount, String status) throws IOException {
         List<Order> orders = findAll();
         boolean found = false;
         for (int i = 0; i < orders.size(); i++) {
-            if (orders.get(i).getId().equalsIgnoreCase(updated.getId())) {
-                orders.set(i, updated);
+            if (orders.get(i).getOrderId() == id) {
+                orders.set(i, new Order(id, customerName, bookTitle, quantity, totalAmount, status));
                 found = true;
             }
         }
@@ -67,13 +87,15 @@ public class OrderDAO {
         return found;
     }
 
-    public synchronized boolean delete(String id) throws IOException {
+    // DELETE
+    public synchronized boolean delete(int id) throws IOException {
         List<Order> orders = findAll();
-        boolean removed = orders.removeIf(o -> o.getId().equalsIgnoreCase(id));
+        boolean removed = orders.removeIf(o -> o.getOrderId() == id);
         if (removed) writeAll(orders);
         return removed;
     }
 
+    // write to temp file first, then replace (safe against data loss)
     private void writeAll(List<Order> orders) throws IOException {
         Path temp = filePath.resolveSibling("orders_temp.txt");
         try (BufferedWriter writer = Files.newBufferedWriter(temp, StandardCharsets.UTF_8)) {
