@@ -23,32 +23,29 @@ public class AuthorDAO {
         }
     }
 
-    // READ all
     public synchronized List<Author> findAll() throws IOException {
         List<Author> authors = new ArrayList<>();
         try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] d = line.split(",", -1);
-                if (d.length == 3) {
-                    authors.add(new Author(d[0], d[1], d[2]));
+                if (d.length >= 3) {
+                    authors.add(new Author(d[0].trim(), d[1].trim(), d[2].trim()));
                 }
             }
         }
         return authors;
     }
 
-    // READ one
     public synchronized Author findById(String id) throws IOException {
         for (Author a : findAll()) {
-            if (a.getAuthorId().equalsIgnoreCase(id)) return a;
+            if (a.getId().equalsIgnoreCase(id)) return a;
         }
         return null;
     }
 
-    // CREATE (false if the ID already exists)
     public synchronized boolean add(Author author) throws IOException {
-        if (findById(author.getAuthorId()) != null) return false;
+        if (findById(author.getId()) != null) return false;
         try (BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8,
                 StandardOpenOption.APPEND)) {
             writer.write(author.toFileLine());
@@ -57,13 +54,12 @@ public class AuthorDAO {
         return true;
     }
 
-    // UPDATE
-    public synchronized boolean update(String id, String newName, String newCountry) throws IOException {
+    public synchronized boolean update(Author updated) throws IOException {
         List<Author> authors = findAll();
         boolean found = false;
         for (int i = 0; i < authors.size(); i++) {
-            if (authors.get(i).getAuthorId().equalsIgnoreCase(id)) {
-                authors.set(i, new Author(authors.get(i).getAuthorId(), newName, newCountry));
+            if (authors.get(i).getId().equalsIgnoreCase(updated.getId())) {
+                authors.set(i, updated);
                 found = true;
             }
         }
@@ -71,15 +67,13 @@ public class AuthorDAO {
         return found;
     }
 
-    // DELETE
     public synchronized boolean delete(String id) throws IOException {
         List<Author> authors = findAll();
-        boolean removed = authors.removeIf(a -> a.getAuthorId().equalsIgnoreCase(id));
+        boolean removed = authors.removeIf(a -> a.getId().equalsIgnoreCase(id));
         if (removed) writeAll(authors);
         return removed;
     }
 
-    // write to a temp file first, then replace (safe against data loss)
     private void writeAll(List<Author> authors) throws IOException {
         Path temp = filePath.resolveSibling("authors_temp.txt");
         try (BufferedWriter writer = Files.newBufferedWriter(temp, StandardCharsets.UTF_8)) {

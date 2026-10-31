@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aura Books - Create Order</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 27, 75, 0.85)),
+      url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=1920&auto=format&fit=crop') !important;
+      background-size: cover !important;
+      background-position: center !important;
+      background-repeat: no-repeat !important;
+      background-attachment: fixed !important;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #f8fafc;
+    }
+
+    .glass-card {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 1rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .form-control, .form-select {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #f8fafc;
+    }
+
+    .form-control:focus, .form-select:focus {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: #6366f1;
+      color: #f8fafc;
+      box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25);
+    }
+
+    .form-control::placeholder {
+      color: rgba(248, 250, 252, 0.4);
+    }
+
+    .form-select option {
+      background: #0f172a;
+      color: #f8fafc;
+    }
+
+    .form-label {
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body class="py-5">
+
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+
+      <div class="glass-card p-4 p-md-5">
+        <h3 class="text-white fw-bold mb-1 text-center"><i class="fa-solid fa-cart-plus me-2 text-primary"></i>Create Order</h3>
+        <p class="text-white-50 text-small text-center mb-4">Place a new book order for a customer.</p>
+
+        <form>
+          <div class="mb-3">
+            <label for="customerName" class="form-label">Customer Name</label>
+            <input type="text" class="form-control" id="customerName" placeholder="e.g. Nimal Siripala" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="bookTitle" class="form-label">Book Title</label>
+            <input type="text" class="form-control" id="bookTitle" placeholder="e.g. Madol Duwa" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="quantity" class="form-label">Quantity</label>
+            <input type="number" class="form-control" id="quantity" placeholder="e.g. 2" min="1" value="1" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="totalPrice" class="form-label">Total Amount (LKR)</label>
+            <input type="number" step="0.01" class="form-control" id="totalPrice" placeholder="e.g. 1700.00" required>
+          </div>
+
+          <div class="mb-4">
+            <label for="orderStatus" class="form-label">Order Status</label>
+            <select class="form-select" id="orderStatus" required>
+              <option value="Pending" selected>Pending</option>
+              <option value="Processing">Processing</option>
+              <option value="Dispatched">Dispatched</option>
+              <option value="Delivered">Delivered</option>
+            </select>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <a href="OM-Orderlist.html" class="btn btn-outline-light">
+              <i class="fa-solid fa-arrow-left me-1"></i>Back
+            </a>
+            <button type="submit" class="btn btn-primary fw-semibold">
+              <i class="fa-solid fa-check me-1"></i>Place Order
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

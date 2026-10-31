@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura Books - Home</title>
+    <title>Aura Books - Bookstore Portal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -44,8 +44,18 @@
             background: rgba(99, 102, 241, 0.25);
             transform: translateY(-4px);
             color: #fff;
+            border-color: rgba(129, 140, 248, 0.5);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.2);
         }
-        .module-card i { font-size: 2rem; color: #818cf8; margin-bottom: 12px; }
+        .module-card i { font-size: 2.2rem; color: #818cf8; margin-bottom: 12px; }
+        .section-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #94a3b8;
+            margin-bottom: 16px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -57,38 +67,66 @@
             <p class="opacity-75">Online Bookstore Management System</p>
         </div>
 
-        <div class="row g-4">
+        <div class="section-title"><i class="fa-solid fa-cubes me-2"></i>Core Management Modules</div>
+        <div class="row g-4 mb-4">
             <div class="col-md-4">
-                <a class="module-card" href="login">
-                    <i class="fa-solid fa-right-to-bracket"></i>
-                    <h5>Login</h5>
+                <a class="module-card" href="book">
+                    <i class="fa-solid fa-book"></i>
+                    <h5 class="fw-semibold">Book Catalog</h5>
+                    <p class="small text-light opacity-75 mb-0">Manage books, titles, genres & prices</p>
                 </a>
             </div>
             <div class="col-md-4">
-                <a class="module-card" href="user?action=new">
-                    <i class="fa-solid fa-user-plus"></i>
-                    <h5>Register</h5>
+                <a class="module-card" href="author">
+                    <i class="fa-solid fa-pen-nib"></i>
+                    <h5 class="fw-semibold">Author Directory</h5>
+                    <p class="small text-light opacity-75 mb-0">Manage author profiles and contacts</p>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a class="module-card" href="publisher">
+                    <i class="fa-solid fa-building"></i>
+                    <h5 class="fw-semibold">Publisher Management</h5>
+                    <p class="small text-light opacity-75 mb-0">Publishing houses and phone lines</p>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a class="module-card" href="order">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <h5 class="fw-semibold">Order Management</h5>
+                    <p class="small text-light opacity-75 mb-0">Track order statuses & customers</p>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a class="module-card" href="review">
+                    <i class="fa-solid fa-star"></i>
+                    <h5 class="fw-semibold">Reviews & Ratings</h5>
+                    <p class="small text-light opacity-75 mb-0">Customer feedback and star ratings</p>
                 </a>
             </div>
             <div class="col-md-4">
                 <a class="module-card" href="user">
                     <i class="fa-solid fa-users-gear"></i>
-                    <h5>User Management</h5>
+                    <h5 class="fw-semibold">User Management</h5>
+                    <p class="small text-light opacity-75 mb-0">Administer users, roles & security</p>
                 </a>
             </div>
+        </div>
 
-            <!-- අනිත් modules සහ Review Management එක මෙහි එකතු කර ඇත -->
-            <!--
-            <div class="col-md-4"><a class="module-card" href="book"><i class="fa-solid fa-book"></i><h5>Book Management</h5></a></div>
-            <div class="col-md-4"><a class="module-card" href="author"><i class="fa-solid fa-pen-nib"></i><h5>Author Management</h5></a></div>
-            <div class="col-md-4"><a class="module-card" href="order"><i class="fa-solid fa-cart-shopping"></i><h5>Order Management</h5></a></div>
-            <div class="col-md-4"><a class="module-card" href="publisher"><i class="fa-solid fa-building"></i><h5>Publisher Management</h5></a></div>
-            -->
-
-            <div class="col-md-4">
-                <a class="module-card" href="ReviewList.jsp">
-                    <i class="fa-solid fa-star"></i>
-                    <h5>Review Management</h5>
+        <div class="section-title"><i class="fa-solid fa-user-shield me-2"></i>Account & Access</div>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <a class="module-card" href="login">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <h5 class="fw-semibold">User Login</h5>
+                    <p class="small text-light opacity-75 mb-0">Sign in to your customer or admin portal</p>
+                </a>
+            </div>
+            <div class="col-md-6">
+                <a class="module-card" href="user?action=new">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <h5 class="fw-semibold">Register New User</h5>
+                    <p class="small text-light opacity-75 mb-0">Create a new customer or admin account</p>
                 </a>
             </div>
         </div>
