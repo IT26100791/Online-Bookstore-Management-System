@@ -5,8 +5,10 @@ import com.bookstore.model.User;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.*;
-import java.io.File;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
 @WebServlet(urlPatterns = {"/user", "/login", "/logout"})
@@ -14,131 +16,89 @@ public class UserServlet extends HttpServlet {
     private UserDAO dao;
 
     @Override
-    public void init() {
-        String dir = getServletContext().getInitParameter("dataDir");
-        if (dir == null || dir.trim().isEmpty() || !new File(dir).exists()) {
-            File homeDir = new File(System.getProperty("user.home"), "bookstore-data");
-            if (!homeDir.exists()) homeDir.mkdirs();
-            dir = homeDir.getAbsolutePath();
-        }
-        dao = new UserDAO(dir);
+    public void init() throws ServletException {
+        super.init();
+        // same data folder as the other modules (project root)
+        dao = new UserDAO(System.getProperty("user.dir"));
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        String servletPath = req.getServletPath();
+        String path = req.getServletPath();
+        String action = req.getParameter("action");
 
-        // 1. Logout Handler (/logout)
-        if ("/logout".equals(servletPath)) {
+        if ("/logout".equals(path)) {
             HttpSession session = req.getSession(false);
             if (session != null) session.invalidate();
-            resp.sendRedirect("user?action=login&msg=Logged+out");
+            resp.sendRedirect("login.jsp?msg=Logged+out+successfully");
+            return;
+        }
+        if ("/login".equals(path)) {
+            resp.sendRedirect("login.jsp");
             return;
         }
 
-        // 2. Login Page Handler (/login)
-        if ("/login".equals(servletPath)) {
-            req.getRequestDispatcher("/login.jsp").forward(req, resp);
+        if ("new".equals(action)) {
+            req.getRequestDispatcher("/register.jsp").forward(req, resp);
             return;
         }
-
-        // 3. User Management Handler (/user)
-        String action = req.getParameter("action");
-        if (action == null) action = "list";
-
-        try {
-            switch (action) {
-                case "new":
-                    req.getRequestDispatcher("/register.jsp").forward(req, resp);
-                    break;
-                case "login":
-                    req.getRequestDispatcher("/login.jsp").forward(req, resp);
-                    break;
-                case "edit":
-                    User u = dao.findByUsername(req.getParameter("username"));
-                    if (u == null) {
-                        resp.sendRedirect("user?msg=Username+not+found");
-                        return;
-                    }
-                    req.setAttribute("user", u);
-                    req.getRequestDispatcher("/edit.jsp").forward(req, resp);
-                    break;
-                default:
-                    req.setAttribute("users", dao.findAll());
-                    req.setAttribute("msg", req.getParameter("msg"));
-                    req.getRequestDispatcher("/list.jsp").forward(req, resp);
+        if ("edit".equals(action)) {
+            User u = dao.findByUsername(req.getParameter("username"));
+            if (u == null) {
+                resp.sendRedirect("user?msg=Username+not+found");
+                return;
             }
-        } catch (IOException e) {
-            throw new ServletException(e);
+            req.setAttribute("user", u);
+            req.getRequestDispatcher("/edit.jsp").forward(req, resp);   // use your edit page's real name
+            return;
         }
+
+        req.setAttribute("users", dao.findAll());
+        req.setAttribute("msg", req.getParameter("msg"));
+        req.getRequestDispatcher("/users-list.jsp").forward(req, resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
-        String servletPath = req.getServletPath();
+        String path = req.getServletPath();
+        String action = req.getParameter("action");
 
-        // 1. Login POST Handler (/login)
-        if ("/login".equals(servletPath)) {
-            String username = trim(req.getParameter("username"));
-            String password = trim(req.getParameter("password"));
-
-            try {
-                User user = dao.authenticate(username, password);
-                if (user == null) {
-                    resp.sendRedirect("user?action=login&msg=Invalid+username+or+password");
-                    return;
-                }
-                HttpSession session = req.getSession(true);
-                session.setAttribute("loggedUser", user);
-
-                if ("Admin".equalsIgnoreCase(user.getRole())) {
-                    resp.sendRedirect("user");          // Admin → user dashboard
+        if ("/login".equals(path)) {
+            String username = req.getParameter("username");
+            String pass = req.getParameter("password");
+            User u = dao.authenticate(username == null ? "" : username.trim(), pass == null ? "" : pass);
+            if (u != null) {
+                req.getSession(true).setAttribute("loggedUser", u);   // SessionUtil reads this name
+                if ("Admin".equalsIgnoreCase(u.getRole())) {
+                    resp.sendRedirect("user");
                 } else {
-                    resp.sendRedirect("welcome.jsp");   // Customer → welcome page
+                    resp.sendRedirect("welcome.jsp");
                 }
-            } catch (IOException e) {
-                throw new ServletException(e);
+            } else {
+                resp.sendRedirect("login.jsp?msg=Invalid+username+or+password");
             }
             return;
         }
 
-        // 2. User Management POST Handlers (/user Actions: add, update, delete)
-        String action = req.getParameter("action");
-        String username = trim(req.getParameter("username"));
-        String password = trim(req.getParameter("password"));
-        String role = trim(req.getParameter("role"));
+        String username = req.getParameter("username");
+        String pass = req.getParameter("password");
+        String role = req.getParameter("role");
 
-        try {
-            switch (action == null ? "" : action) {
-                case "add":
-                    if (username.isEmpty() || password.isEmpty() || username.contains(",") || password.contains(",")) {
-                        resp.sendRedirect("user?action=new&msg=Invalid+input");
-                        return;
-                    }
-                    String roleToSave = "Admin".equalsIgnoreCase(role) ? "Admin" : "Customer";
-                    boolean added = dao.add(new com.bookstore.model.User(username, password, roleToSave));
-                    resp.sendRedirect("user?action=login&msg=" + (added ? "User+registered" : "Username+already+exists"));
-                    break;
-                case "update":
-                    boolean updated = dao.update(username, password, role);
-                    resp.sendRedirect("user?msg=" + (updated ? "User+updated" : "Username+not+found"));
-                    break;
-                case "delete":
-                    boolean deleted = dao.delete(username);
-                    resp.sendRedirect("user?msg=" + (deleted ? "User+deleted" : "Username+not+found"));
-                    break;
-                default:
-                    resp.sendRedirect("user");
-            }
-        } catch (IOException e) {
-            throw new ServletException(e);
+        if ("add".equals(action)) {
+            boolean ok = dao.add(new User(username, pass, role));
+            resp.sendRedirect(ok ? "user?msg=User+added+successfully"
+                    : "register.jsp?msg=Username+already+exists");
+        } else if ("update".equals(action)) {
+            dao.update(username, pass, role);
+            resp.sendRedirect("user?msg=User+updated+successfully");
+        } else if ("delete".equals(action)) {
+            dao.delete(username);
+            resp.sendRedirect("user?msg=User+deleted+successfully");
+        } else {
+            resp.sendRedirect("user");
         }
-    }
-
-    private String trim(String s) {
-        return s == null ? "" : s.trim();
     }
 }
