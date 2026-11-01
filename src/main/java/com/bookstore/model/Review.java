@@ -1,24 +1,56 @@
 package com.bookstore.model;
 
-public class Review {
-    private final String id;
-    private final String bookTitle;
-    private final String rating;
-    private final String comment;
+/** Base class for all reviews (Inheritance + Polymorphism: Verified / Public). */
+public abstract class Review {
+    private final String reviewId;
+    private String bookTitle;
+    private int rating;
+    private final String reviewer;
+    private String comment;
 
-    public Review(String id, String bookTitle, String rating, String comment) {
-        this.id = id;
-        this.bookTitle = bookTitle;
-        this.rating = rating;
-        this.comment = comment;
+    protected Review(String reviewId, String bookTitle, int rating, String reviewer, String comment) {
+        this.reviewId = reviewId;
+        this.reviewer = reviewer;
+        setBookTitle(bookTitle);
+        setRating(rating);
+        setComment(comment);
     }
 
-    public String getId() { return id; }
+    public String getReviewId() { return reviewId; }
     public String getBookTitle() { return bookTitle; }
-    public String getRating() { return rating; }
+    public int getRating() { return rating; }
+    public String getReviewer() { return reviewer; }
     public String getComment() { return comment; }
 
+    // Setters validate the values (Encapsulation)
+    public void setBookTitle(String bookTitle) {
+        if (bookTitle == null || bookTitle.trim().isEmpty()) {
+            throw new IllegalArgumentException("Book title cannot be empty.");
+        }
+        this.bookTitle = bookTitle.trim().replace(",", " ");
+    }
+
+    public void setRating(int rating) {
+        if (rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Choose a rating from 1 to 5.");
+        }
+        this.rating = rating;
+    }
+
+    public void setComment(String comment) {
+        if (comment == null || comment.trim().isEmpty()) {
+            throw new IllegalArgumentException("Comment cannot be empty.");
+        }
+        this.comment = comment.trim().replace("\n", " ").replace("\r", " ");
+    }
+
+    // Polymorphism: each subclass overrides these
+    public abstract String getType();
+    public abstract String getBadge();
+    public abstract String getDisplayText(boolean adminView);
+
+    /** type,id,title,rating,reviewer,comment */
     public String toFileLine() {
-        return id + "," + bookTitle + "," + rating + "," + comment;
+        return getType() + "," + reviewId + "," + bookTitle + "," + rating + "," + reviewer + "," + comment;
     }
 }
