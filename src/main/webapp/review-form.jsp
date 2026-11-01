@@ -8,7 +8,7 @@
 <%
     Review review = (Review) request.getAttribute("review");
     boolean editing = (review != null);
-    String currentRating = editing ? review.getRating() : "5";
+    String currentRating = editing ? String.valueOf(review.getRating()) : "5";
     String msg = (String) request.getAttribute("msg");
 %>
 <!DOCTYPE html>
@@ -73,7 +73,7 @@
             <div class="mb-3">
                 <label class="form-label">Review ID</label>
                 <input type="text" name="id" class="form-control" required
-                       value="<%= editing ? esc(review.getId()) : "" %>" <%= editing ? "readonly" : "" %>>
+                       value="<%= editing ? esc(review.getReviewId()) : "" %>" <%= editing ? "readonly" : "" %>>
             </div>
             <div class="mb-3">
                 <label class="form-label">Book Title</label>

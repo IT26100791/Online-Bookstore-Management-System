@@ -76,12 +76,11 @@
                     int n = 1;
                     if (reviews != null && !reviews.isEmpty()) {
                         for (Review r : reviews) {
-                            int stars = 0;
-                            try { stars = Integer.parseInt(r.getRating()); } catch(Exception ignored) {}
+                            int stars = r.getRating();
                 %>
                 <tr>
                     <td><%= String.format("%02d", n++) %></td>
-                    <td><%= esc(r.getId()) %></td>
+                    <td><%= esc(r.getReviewId()) %></td>
                     <td><%= esc(r.getBookTitle()) %></td>
                     <td>
                         <span class="star-rating">
@@ -89,17 +88,20 @@
                                 <i class="fa-<%= s <= stars ? "solid" : "regular" %> fa-star"></i>
                             <% } %>
                         </span>
-                        <span class="ms-1 small text-light opacity-75">(<%= esc(r.getRating()) %>/5)</span>
+                        <span class="ms-1 small text-light opacity-75">(<%= r.getRating() %>/5)</span>
                     </td>
-                    <td><%= esc(r.getComment()) %></td>
+                    <td>
+                        <span class="badge bg-secondary me-1"><%= esc(r.getBadge()) %></span>
+                        <%= esc(r.getReviewer()) %>: <%= esc(r.getComment()) %>
+                    </td>
                     <td class="text-center">
                         <a class="btn btn-sm btn-warning btn-action me-1"
-                           href="review?action=edit&id=<%= java.net.URLEncoder.encode(r.getId(), "UTF-8") %>">
+                           href="review?action=edit&id=<%= java.net.URLEncoder.encode(r.getReviewId(), "UTF-8") %>">
                             <i class="fa-solid fa-pen-to-square"></i></a>
                         <form method="post" action="review" style="display:inline"
                               onsubmit="return confirm('Delete this review?');">
                             <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="id" value="<%= esc(r.getId()) %>">
+                            <input type="hidden" name="id" value="<%= esc(r.getReviewId()) %>">
                             <button type="submit" class="btn btn-sm btn-danger btn-action"><i class="fa-solid fa-trash"></i></button>
                         </form>
                     </td>

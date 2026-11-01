@@ -1,32 +1,47 @@
 package com.bookstore.servlet;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import com.bookstore.dao.ReviewDAO;
+import com.bookstore.model.PublicReview;
+import com.bookstore.model.Review;
+import com.bookstore.model.VerifiedReview;
+import com.bookstore.util.SessionUtil;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
+/** CREATE: saves a new review through ReviewDAO. */
 @WebServlet("/AddReviewServlet")
 public class AddReviewServlet extends HttpServlet {
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Form එකෙන් එන දත්ත ලබා ගැනීම
-        String reviewId = request.getParameter("reviewId");
-        String bookTitle = request.getParameter("bookTitle");
-        String rating = request.getParameter("rating");
-        String comment = request.getParameter("comment");
 
-        // දත්ත Comma-separated (CSV) විදිහට reviews.txt ෆයිල් එකට ලිවීම
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("reviews.txt", true))) {
-            writer.write(reviewId + "," + bookTitle + "," + rating + "," + comment);
-            writer.newLine(); // අලුත් පේළියකට ය기
-        } catch (IOException e) {
-            e.printStackTrace();
+    private final ReviewDAO dao = new ReviewDAO();
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        request.setCharacterEncoding("UTF-8");
+        String result;
+        try {
+            String id = request.getParameter("reviewId");
+            String title = request.getParameter("bookTitle");
+            int rating = Integer.parseInt(request.getParameter("rating"));
+            String comment = request.getParameter("comment");
+            String reviewer = SessionUtil.getUsername(request);
+
+            if (id == null || id.trim().isEmpty()) {
+                throw new IllegalArgumentException("Review ID cannot be empty.");
+            }
+            Review review = "VERIFIED".equalsIgnoreCase(request.getParameter("type"))
+                    ? new VerifiedReview(id.trim(), title, rating, reviewer, comment)
+                    : new PublicReview(id.trim(), title, rating, reviewer, comment);
+
+            result = dao.add(review) ? "added" : "duplicate";
+        } catch (IllegalArgumentException e) {   // includes NumberFormatException
+            result = "invalid";
         }
-
-        // දත්ත save වූ පසු නැවත Review List පිටුවට යැවීම
-        response.sendRedirect("ReviewList.jsp");
+        response.sendRedirect(request.getContextPath() + "/viewReviews?msg=" + result);
     }
 }

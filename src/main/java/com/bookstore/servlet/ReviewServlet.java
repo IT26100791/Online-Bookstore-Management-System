@@ -1,7 +1,9 @@
 package com.bookstore.servlet;
 
 import com.bookstore.dao.ReviewDAO;
+import com.bookstore.model.PublicReview;
 import com.bookstore.model.Review;
+import com.bookstore.util.SessionUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -46,7 +48,7 @@ public class ReviewServlet extends HttpServlet {
                 req.getRequestDispatcher("/review-form.jsp").forward(req, resp);
                 break;
             default:
-                req.setAttribute("reviews", dao.findAll());
+                req.setAttribute("reviews", dao.getAll());
                 req.getRequestDispatcher("/review-list.jsp").forward(req, resp);
         }
     }
@@ -76,7 +78,22 @@ public class ReviewServlet extends HttpServlet {
                     return;
                 }
 
-                Review review = new Review(id, bookTitle, rating, comment);
+                int ratingValue;
+                try {
+                    ratingValue = Integer.parseInt(rating);
+                } catch (NumberFormatException e) {
+                    resp.sendRedirect(back + "&msg=Rating+must+be+a+number+1-5");
+                    return;
+                }
+
+                Review review;
+                try {
+                    review = new PublicReview(id, bookTitle, ratingValue, SessionUtil.getUsername(req), comment);
+                } catch (IllegalArgumentException e) {
+                    resp.sendRedirect(back + "&msg=" + enc(e.getMessage()));
+                    return;
+                }
+
                 if (isUpdate) {
                     boolean ok = dao.update(review);
                     resp.sendRedirect("review?msg=" + (ok ? "Review+updated" : "Review+not+found"));
