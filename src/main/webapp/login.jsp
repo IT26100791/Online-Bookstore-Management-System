@@ -79,7 +79,8 @@
       <div class="alert alert-warning py-2"><%= msg.replace("<", "&lt;") %></div>
     <% } %>
 
-    <form action="login" method="POST">
+    <form action="${pageContext.request.contextPath}/login" method="POST">
+
         <div class="mb-3">
             <label class="form-label"><i class="fa-solid fa-user me-2"></i>Username</label>
             <input type="text" name="username" class="form-control" placeholder="Enter your username" required>

@@ -81,7 +81,8 @@
     <div class="alert alert-danger py-2"><%= msg.replace("<", "&lt;") %></div>
   <% } %>
 
-  <form action="user" method="POST">
+  <form action="${pageContext.request.contextPath}/user" method="POST">
+      <input type="hidden" name="action" value="add">
     <input type="hidden" name="action" value="add">
     <div class="mb-3">
       <label class="form-label"><i class="fa-solid fa-user me-2"></i>Username</label>
