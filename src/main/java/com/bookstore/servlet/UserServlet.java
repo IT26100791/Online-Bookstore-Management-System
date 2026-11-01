@@ -9,7 +9,7 @@ import javax.servlet.http.*;
 import java.io.File;
 import java.io.IOException;
 
-@WebServlet("/user")
+@WebServlet(urlPatterns = {"/user", "/login", "/logout"})
 public class UserServlet extends HttpServlet {
     private UserDAO dao;
 
@@ -27,6 +27,23 @@ public class UserServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+        String servletPath = req.getServletPath();
+
+        // 1. Logout Handler (/logout)
+        if ("/logout".equals(servletPath)) {
+            HttpSession session = req.getSession(false);
+            if (session != null) session.invalidate();
+            resp.sendRedirect("user?action=login&msg=Logged+out");
+            return;
+        }
+
+        // 2. Login Page Handler (/login)
+        if ("/login".equals(servletPath)) {
+            req.getRequestDispatcher("/login.jsp").forward(req, resp);
+            return;
+        }
+
+        // 3. User Management Handler (/user)
         String action = req.getParameter("action");
         if (action == null) action = "list";
 
@@ -34,6 +51,9 @@ public class UserServlet extends HttpServlet {
             switch (action) {
                 case "new":
                     req.getRequestDispatcher("/register.jsp").forward(req, resp);
+                    break;
+                case "login":
+                    req.getRequestDispatcher("/login.jsp").forward(req, resp);
                     break;
                 case "edit":
                     User u = dao.findByUsername(req.getParameter("username"));
@@ -58,6 +78,34 @@ public class UserServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
+        String servletPath = req.getServletPath();
+
+        // 1. Login POST Handler (/login)
+        if ("/login".equals(servletPath)) {
+            String username = trim(req.getParameter("username"));
+            String password = trim(req.getParameter("password"));
+
+            try {
+                User user = dao.authenticate(username, password);
+                if (user == null) {
+                    resp.sendRedirect("user?action=login&msg=Invalid+username+or+password");
+                    return;
+                }
+                HttpSession session = req.getSession(true);
+                session.setAttribute("loggedUser", user);
+
+                if ("Admin".equalsIgnoreCase(user.getRole())) {
+                    resp.sendRedirect("user");          // Admin → user dashboard
+                } else {
+                    resp.sendRedirect("welcome.jsp");   // Customer → welcome page
+                }
+            } catch (IOException e) {
+                throw new ServletException(e);
+            }
+            return;
+        }
+
+        // 2. User Management POST Handlers (/user Actions: add, update, delete)
         String action = req.getParameter("action");
         String username = trim(req.getParameter("username"));
         String password = trim(req.getParameter("password"));
@@ -72,7 +120,7 @@ public class UserServlet extends HttpServlet {
                     }
                     String roleToSave = "Admin".equalsIgnoreCase(role) ? "Admin" : "Customer";
                     boolean added = dao.add(new com.bookstore.model.User(username, password, roleToSave));
-                    resp.sendRedirect("user?msg=" + (added ? "User+registered" : "Username+already+exists"));
+                    resp.sendRedirect("user?action=login&msg=" + (added ? "User+registered" : "Username+already+exists"));
                     break;
                 case "update":
                     boolean updated = dao.update(username, password, role);

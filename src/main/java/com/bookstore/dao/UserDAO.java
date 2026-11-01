@@ -11,10 +11,30 @@ import java.util.List;
 public class UserDAO {
     private final Path filePath;
 
+    // 1. Default constructor එකක් එක් කරන ලදී (Tomcat එකෙන් පහසුවෙන් call කිරීමට)
+    public UserDAO() {
+        // Default ලෙස user.home හෝ java.io.tmpdir යොදාගත හැක,
+        // නැතහොත් Servlet එකෙන් getRealPath ලබා දී පහත overloaded constructor එක පාවිච්චි කළ හැක.
+        String defaultDir = System.getProperty("user.home");
+        this.filePath = Paths.get(defaultDir, "users.txt");
+        initFile();
+    }
+
+    // 2. Servlet එකෙන් getRealPath ලබාදී call කිරීමට ඇති Constructor එක
     public UserDAO(String dataDir) {
+        if (dataDir == null || dataDir.trim().isEmpty()) {
+            dataDir = System.getProperty("user.home");
+        }
         this.filePath = Paths.get(dataDir, "users.txt");
+        initFile();
+    }
+
+    // File එක සහ Directories සකසාගැනීමට පොදු method එකක්
+    private void initFile() {
         try {
-            Files.createDirectories(filePath.getParent());
+            if (filePath.getParent() != null) {
+                Files.createDirectories(filePath.getParent());
+            }
             if (!Files.exists(filePath)) {
                 Files.createFile(filePath);
             }
@@ -33,11 +53,15 @@ public class UserDAO {
     // READ all
     public synchronized List<User> findAll() throws IOException {
         List<User> users = new ArrayList<>();
+        if (!Files.exists(filePath)) {
+            return users;
+        }
         try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
             String line;
             while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
                 String[] d = line.split(",");
-                if (d.length == 3) {
+                if (d.length >= 3) {
                     users.add(createUser(d[0], d[1], d[2]));
                 }
             }
@@ -52,6 +76,7 @@ public class UserDAO {
         }
         return null;
     }
+
     // LOGIN check: returns the user if username + password match, else null
     public synchronized User authenticate(String username, String password) throws IOException {
         User u = findByUsername(username);
