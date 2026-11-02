@@ -18,8 +18,7 @@ public class UserServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
         super.init();
-        // same data folder as the other modules (project root)
-        dao = new UserDAO(System.getProperty("user.dir"));
+        dao = new UserDAO();   // uses DataPaths.dataDir()
     }
 
     @Override
@@ -50,7 +49,7 @@ public class UserServlet extends HttpServlet {
                 return;
             }
             req.setAttribute("user", u);
-            req.getRequestDispatcher("/edit.jsp").forward(req, resp);   // use your edit page's real name
+            req.getRequestDispatcher("/edit.jsp").forward(req, resp);
             return;
         }
 
@@ -69,9 +68,10 @@ public class UserServlet extends HttpServlet {
         if ("/login".equals(path)) {
             String username = req.getParameter("username");
             String pass = req.getParameter("password");
-            User u = dao.authenticate(username == null ? "" : username.trim(), pass == null ? "" : pass);
+            User u = dao.authenticate(username == null ? "" : username.trim(),
+                    pass == null ? "" : pass);
             if (u != null) {
-                req.getSession(true).setAttribute("loggedUser", u);   // SessionUtil reads this name
+                req.getSession(true).setAttribute("loggedUser", u);
                 if ("Admin".equalsIgnoreCase(u.getRole())) {
                     resp.sendRedirect("user");
                 } else {
@@ -88,7 +88,14 @@ public class UserServlet extends HttpServlet {
         String role = req.getParameter("role");
 
         if ("add".equals(action)) {
-            boolean ok = dao.add(new User(username, pass, role));
+            if (username == null || username.trim().isEmpty()
+                    || pass == null || pass.isEmpty()
+                    || username.contains(",") || pass.contains(",")) {
+                resp.sendRedirect("register.jsp?msg=Invalid+input");
+                return;
+            }
+            String roleToSave = "Admin".equalsIgnoreCase(role) ? "Admin" : "Customer";
+            boolean ok = dao.add(new User(username.trim(), pass, roleToSave));
             resp.sendRedirect(ok ? "user?msg=User+added+successfully"
                     : "register.jsp?msg=Username+already+exists");
         } else if ("update".equals(action)) {

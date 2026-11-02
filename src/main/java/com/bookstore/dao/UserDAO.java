@@ -1,6 +1,7 @@
 package com.bookstore.dao;
 
 import com.bookstore.model.*;
+import com.bookstore.util.DataPaths;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -11,21 +12,20 @@ import java.util.List;
 public class UserDAO {
     private final Path filePath;
 
-    // 1. Default constructor: <project root>/data folder
+    // Default: -Dbookstore.data=<path> if given, otherwise <working dir>/data
     public UserDAO() {
-        this(System.getProperty("user.dir") + "/data");
+        this(DataPaths.dataDir());
     }
 
-    // 2. Constructor with a custom data folder
     public UserDAO(String dataDir) {
         if (dataDir == null || dataDir.trim().isEmpty()) {
-            dataDir = System.getProperty("user.dir") + "/data";
+            dataDir = DataPaths.dataDir();
         }
-        this.filePath = Paths.get(dataDir, "users.txt");
+        this.filePath = Paths.get(dataDir, "users.txt").toAbsolutePath();
         initFile();
+        System.out.println("USERS FILE: " + filePath);
     }
 
-    // Creates the data folder and users.txt if they do not exist
     private void initFile() {
         try {
             if (filePath.getParent() != null) {
@@ -58,7 +58,7 @@ public class UserDAO {
                 if (line.trim().isEmpty()) continue;
                 String[] d = line.split(",");
                 if (d.length >= 3) {
-                    users.add(createUser(d[0], d[1], d[2]));
+                    users.add(createUser(d[0].trim(), d[1].trim(), d[2].trim()));
                 }
             }
         }
@@ -67,13 +67,14 @@ public class UserDAO {
 
     // READ one
     public synchronized User findByUsername(String username) throws IOException {
+        if (username == null) return null;
         for (User u : findAll()) {
-            if (u.getUsername().equalsIgnoreCase(username)) return u;
+            if (u.getUsername().equalsIgnoreCase(username.trim())) return u;
         }
         return null;
     }
 
-    // LOGIN check: returns the user if username + password match, else null
+    // LOGIN check
     public synchronized User authenticate(String username, String password) throws IOException {
         User u = findByUsername(username);
         if (u != null && u.getPassword().equals(password)) {
