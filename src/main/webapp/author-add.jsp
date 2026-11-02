@@ -12,8 +12,9 @@
         body { background: linear-gradient(135deg, #0f172a, #1e1b4b); min-height: 100vh; color: #f8fafc; padding: 40px 0; }
         .glass { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 30px; }
         .table { color: #f8fafc; --bs-table-bg: transparent; --bs-table-color: #f8fafc; --bs-table-hover-bg: rgba(255,255,255,0.06); --bs-table-hover-color: #fff; }
-        .form-control { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.2); }
-        .form-control:focus { background: rgba(255,255,255,0.12); color: #fff; }
+        .form-control, .form-select { background-color: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.2); }
+        .form-control:focus, .form-select:focus { background-color: rgba(255,255,255,0.12); color: #fff; }
+        .form-select option { color: #000; }
         .form-control:read-only { opacity: .7; }
     </style>
     <title>Add Author</title>
@@ -41,6 +42,13 @@
       <div class="mb-3">
         <label class="form-label">Country</label>
         <input type="text" name="country" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Author Type</label>
+        <select name="authorType" class="form-select">
+          <option value="Local">Local</option>
+          <option value="International">International</option>
+        </select>
       </div>
       <p class="small opacity-75">Commas are not allowed in any field.</p>
       <button type="submit" class="btn btn-primary">Save Author</button>

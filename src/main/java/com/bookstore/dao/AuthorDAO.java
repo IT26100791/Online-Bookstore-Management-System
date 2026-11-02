@@ -1,6 +1,6 @@
 package com.bookstore.dao;
 
-import com.bookstore.model.Author;
+import com.bookstore.model.*;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -23,29 +23,42 @@ public class AuthorDAO {
         }
     }
 
+    // Factory: returns the right subclass
+    private Author createAuthor(String id, String name, String country, String type) {
+        if ("Local".equalsIgnoreCase(type)) return new LocalAuthor(id, name, country);
+        if ("International".equalsIgnoreCase(type)) return new InternationalAuthor(id, name, country);
+        return new Author(id, name, country, type);
+    }
+
+    // READ all
     public synchronized List<Author> findAll() throws IOException {
         List<Author> authors = new ArrayList<>();
         try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] d = line.split(",", -1);
-                if (d.length >= 3) {
-                    authors.add(new Author(d[0].trim(), d[1].trim(), d[2].trim()));
+                if (d.length == 4) {
+                    authors.add(createAuthor(d[0], d[1], d[2], d[3]));
+                } else if (d.length == 3) {
+                    // old 3-column line (before types existed): treat as Local
+                    authors.add(createAuthor(d[0], d[1], d[2], "Local"));
                 }
             }
         }
         return authors;
     }
 
+    // READ one
     public synchronized Author findById(String id) throws IOException {
         for (Author a : findAll()) {
-            if (a.getId().equalsIgnoreCase(id)) return a;
+            if (a.getAuthorId().equalsIgnoreCase(id)) return a;
         }
         return null;
     }
 
+    // CREATE (false if the ID already exists)
     public synchronized boolean add(Author author) throws IOException {
-        if (findById(author.getId()) != null) return false;
+        if (findById(author.getAuthorId()) != null) return false;
         try (BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8,
                 StandardOpenOption.APPEND)) {
             writer.write(author.toFileLine());
@@ -54,12 +67,13 @@ public class AuthorDAO {
         return true;
     }
 
-    public synchronized boolean update(Author updated) throws IOException {
+    // UPDATE
+    public synchronized boolean update(String id, String newName, String newCountry, String newType) throws IOException {
         List<Author> authors = findAll();
         boolean found = false;
         for (int i = 0; i < authors.size(); i++) {
-            if (authors.get(i).getId().equalsIgnoreCase(updated.getId())) {
-                authors.set(i, updated);
+            if (authors.get(i).getAuthorId().equalsIgnoreCase(id)) {
+                authors.set(i, createAuthor(authors.get(i).getAuthorId(), newName, newCountry, newType));
                 found = true;
             }
         }
@@ -67,13 +81,15 @@ public class AuthorDAO {
         return found;
     }
 
+    // DELETE
     public synchronized boolean delete(String id) throws IOException {
         List<Author> authors = findAll();
-        boolean removed = authors.removeIf(a -> a.getId().equalsIgnoreCase(id));
+        boolean removed = authors.removeIf(a -> a.getAuthorId().equalsIgnoreCase(id));
         if (removed) writeAll(authors);
         return removed;
     }
 
+    // write to a temp file first, then replace (safe against data loss)
     private void writeAll(List<Author> authors) throws IOException {
         Path temp = filePath.resolveSibling("authors_temp.txt");
         try (BufferedWriter writer = Files.newBufferedWriter(temp, StandardCharsets.UTF_8)) {
