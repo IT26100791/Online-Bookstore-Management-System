@@ -8,6 +8,7 @@
 <%
     Publisher publisher = (Publisher) request.getAttribute("publisher");
     boolean editing = (publisher != null);
+    String currentType = editing ? publisher.getType() : "LOCAL";
     String msg = (String) request.getAttribute("msg");
 %>
 <!DOCTYPE html>
@@ -39,8 +40,19 @@
             margin: 0 auto;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
-        .form-control { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff; }
-        .form-control:focus { background: rgba(255,255,255,0.12); color: #fff; }
+        .form-control, .form-select {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+        }
+        .form-select option {
+            background: #1e1b4b;
+            color: #fff;
+        }
+        .form-control:focus, .form-select:focus {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+        }
         .form-control[readonly] { opacity: 0.7; }
     </style>
 </head>
@@ -73,6 +85,19 @@
                 <input type="text" name="phone" class="form-control" required
                        value="<%= editing ? esc(publisher.getPhone()) : "" %>">
             </div>
+            <div class="mb-3">
+                <label class="form-label">Publisher Type</label>
+                <select name="type" id="type" class="form-select" required>
+                    <option value="LOCAL" <%= "LOCAL".equals(currentType) ? "selected" : "" %>>Local Publisher</option>
+                    <option value="INTERNATIONAL" <%= "INTERNATIONAL".equals(currentType) ? "selected" : "" %>>International Publisher</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" id="extraLabel">District</label>
+                <input type="text" name="extra" id="extra" class="form-control" required
+                       value="<%= editing ? esc(publisher.getExtra()) : "" %>">
+            </div>
+            <p class="small opacity-75">Commas are not allowed in any field.</p>
 
             <button type="submit" class="btn btn-primary" style="background: #6366f1; border: none;">
                 <i class="fa-solid fa-floppy-disk me-1"></i>Save</button>
@@ -80,5 +105,16 @@
         </form>
     </div>
 </div>
+
+<script>
+    // Local -> District, International -> Country
+    var typeSelect = document.getElementById('type');
+    var extraLabel = document.getElementById('extraLabel');
+    function syncLabel() {
+        extraLabel.textContent = typeSelect.value === 'INTERNATIONAL' ? 'Country' : 'District';
+    }
+    typeSelect.addEventListener('change', syncLabel);
+    syncLabel();
+</script>
 </body>
 </html>
