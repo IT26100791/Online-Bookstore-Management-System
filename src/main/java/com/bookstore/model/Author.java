@@ -1,21 +1,30 @@
 package com.bookstore.model;
 
 public class Author {
-    private final String id;
+    private final String authorId;
     private final String name;
-    private final String email;
+    private final String country;
+    private final String authorType;   // "Local" or "International"
 
-    public Author(String id, String name, String email) {
-        this.id = id;
+    public Author(String authorId, String name, String country, String authorType) {
+        this.authorId = authorId;
         this.name = name;
-        this.email = email;
+        this.country = country;
+        this.authorType = authorType;
     }
 
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public String getEmail() { return email; }
+    public String getAuthorId()   { return authorId; }
+    public String getName()       { return name; }
+    public String getCountry()    { return country; }
+    public String getAuthorType() { return authorType; }
 
+    // overridden by the subclasses (same idea as getRoleDescription() in User)
+    public String getTypeDescription() {
+        return "General author";
+    }
+
+    // one line in authors.txt:  id,name,country,type
     public String toFileLine() {
-        return id + "," + name + "," + email;
+        return authorId + "," + name + "," + country + "," + authorType;
     }
 }
