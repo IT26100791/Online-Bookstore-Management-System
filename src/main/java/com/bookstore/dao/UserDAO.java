@@ -11,25 +11,21 @@ import java.util.List;
 public class UserDAO {
     private final Path filePath;
 
-    // 1. Default constructor එකක් එක් කරන ලදී (Tomcat එකෙන් පහසුවෙන් call කිරීමට)
+    // 1. Default constructor: <project root>/data folder
     public UserDAO() {
-        // Default ලෙස user.home හෝ java.io.tmpdir යොදාගත හැක,
-        // නැතහොත් Servlet එකෙන් getRealPath ලබා දී පහත overloaded constructor එක පාවිච්චි කළ හැක.
-        String defaultDir = System.getProperty("user.home");
-        this.filePath = Paths.get(defaultDir, "users.txt");
-        initFile();
+        this(System.getProperty("user.dir") + "/data");
     }
 
-    // 2. Servlet එකෙන් getRealPath ලබාදී call කිරීමට ඇති Constructor එක
+    // 2. Constructor with a custom data folder
     public UserDAO(String dataDir) {
         if (dataDir == null || dataDir.trim().isEmpty()) {
-            dataDir = System.getProperty("user.home");
+            dataDir = System.getProperty("user.dir") + "/data";
         }
         this.filePath = Paths.get(dataDir, "users.txt");
         initFile();
     }
 
-    // File එක සහ Directories සකසාගැනීමට පොදු method එකක්
+    // Creates the data folder and users.txt if they do not exist
     private void initFile() {
         try {
             if (filePath.getParent() != null) {
