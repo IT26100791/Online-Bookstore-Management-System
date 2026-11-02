@@ -87,7 +87,7 @@
                 <a class="module-card" href="publisher">
                     <i class="fa-solid fa-building"></i>
                     <h5 class="fw-semibold">Publisher Management</h5>
-                    <p class="small text-light opacity-75 mb-0">Publishing houses and phone lines</p>
+                    <p class="small text-light opacity-75 mb-0">Local &amp; international publishers and contacts</p>
                 </a>
             </div>
             <div class="col-md-4">

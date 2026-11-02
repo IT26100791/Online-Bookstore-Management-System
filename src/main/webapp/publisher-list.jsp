@@ -46,7 +46,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="fw-bold"><i class="fa-solid fa-building me-2" style="color: #818cf8;"></i>Publisher Management</h2>
-                <p class="text-light opacity-75 mb-0">Manage publishing partners and contact details</p>
+                <p class="text-light opacity-75 mb-0">Manage local and international publishing partners</p>
             </div>
             <div>
                 <a href="index.jsp" class="btn btn-outline-light me-2"><i class="fa-solid fa-house me-1"></i>Home</a>
@@ -66,6 +66,7 @@
                 <thead>
                 <tr>
                     <th>#</th><th>Publisher ID</th><th>Company Name</th><th>Phone</th>
+                    <th>Type</th><th>Location</th>
                     <th class="text-center">Actions</th>
                 </tr>
                 </thead>
@@ -75,13 +76,23 @@
                     int n = 1;
                     if (publishers != null && !publishers.isEmpty()) {
                         for (Publisher p : publishers) {
+                            boolean intl = "INTERNATIONAL".equals(p.getType());
                 %>
                 <tr>
                     <td><%= String.format("%02d", n++) %></td>
                     <td><%= esc(p.getId()) %></td>
                     <td><%= esc(p.getName()) %></td>
                     <td><%= esc(p.getPhone()) %></td>
+                    <td>
+                        <span class="badge <%= intl ? "bg-info text-dark" : "bg-success" %>">
+                            <i class="fa-solid <%= intl ? "fa-globe" : "fa-location-dot" %> me-1"></i><%= intl ? "International" : "Local" %>
+                        </span>
+                    </td>
+                    <td><span class="small opacity-75"><%= esc(p.getExtraLabel()) %>:</span> <%= esc(p.getExtra()) %></td>
                     <td class="text-center">
+                        <a class="btn btn-sm btn-info btn-action me-1"
+                           href="publisher?action=view&id=<%= java.net.URLEncoder.encode(p.getId(), "UTF-8") %>">
+                            <i class="fa-solid fa-eye"></i></a>
                         <a class="btn btn-sm btn-warning btn-action me-1"
                            href="publisher?action=edit&id=<%= java.net.URLEncoder.encode(p.getId(), "UTF-8") %>">
                             <i class="fa-solid fa-pen-to-square"></i></a>
@@ -95,7 +106,7 @@
                 </tr>
                 <%      }
                     } else { %>
-                <tr><td colspan="5" class="text-center opacity-75">No publishers yet.</td></tr>
+                <tr><td colspan="7" class="text-center opacity-75">No publishers yet.</td></tr>
                 <% } %>
                 </tbody>
             </table>
