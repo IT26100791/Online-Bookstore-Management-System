@@ -1,8 +1,7 @@
 package com.bookstore.dao;
 
-import com.bookstore.model.InternationalPublisher;
-import com.bookstore.model.LocalPublisher;
 import com.bookstore.model.Publisher;
+import com.bookstore.util.DataPaths;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -13,9 +12,9 @@ import java.util.List;
 public class PublisherDAO {
     private final Path filePath;
 
-    // Same default folder as the Review module
+    // Default constructor using DataPaths
     public PublisherDAO() {
-        this(System.getProperty("user.home") + "/bookstore-data");
+        this(DataPaths.dataDir());
     }
 
     public PublisherDAO(String dataDir) {
@@ -30,35 +29,20 @@ public class PublisherDAO {
         }
     }
 
-    // Factory: returns the right subclass
-    public static Publisher create(String type, String id, String name, String phone, String extra) {
-        if ("INTERNATIONAL".equalsIgnoreCase(type)) {
-            return new InternationalPublisher(id, name, phone, extra);
-        }
-        return new LocalPublisher(id, name, phone, extra);
-    }
-
-    // READ all
     public synchronized List<Publisher> findAll() throws IOException {
         List<Publisher> publishers = new ArrayList<>();
         try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty()) continue;
-                String[] d = line.split(",", 5);
-                if (d.length == 5) {
-                    try {
-                        publishers.add(create(d[0].trim(), d[1], d[2], d[3], d[4]));
-                    } catch (IllegalArgumentException e) {
-                        // bad line: skip it
-                    }
+                String[] d = line.split(",", -1);
+                if (d.length >= 3) {
+                    publishers.add(new Publisher(d[0].trim(), d[1].trim(), d[2].trim()));
                 }
             }
         }
         return publishers;
     }
 
-    // READ one
     public synchronized Publisher findById(String id) throws IOException {
         for (Publisher p : findAll()) {
             if (p.getId().equalsIgnoreCase(id)) return p;
@@ -66,7 +50,6 @@ public class PublisherDAO {
         return null;
     }
 
-    // CREATE (false if the ID already exists)
     public synchronized boolean add(Publisher publisher) throws IOException {
         if (findById(publisher.getId()) != null) return false;
         try (BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8,
@@ -77,7 +60,6 @@ public class PublisherDAO {
         return true;
     }
 
-    // UPDATE
     public synchronized boolean update(Publisher updated) throws IOException {
         List<Publisher> publishers = findAll();
         boolean found = false;
@@ -91,7 +73,6 @@ public class PublisherDAO {
         return found;
     }
 
-    // DELETE
     public synchronized boolean delete(String id) throws IOException {
         List<Publisher> publishers = findAll();
         boolean removed = publishers.removeIf(p -> p.getId().equalsIgnoreCase(id));
@@ -99,7 +80,6 @@ public class PublisherDAO {
         return removed;
     }
 
-    // write to a temp file first, then replace (safe against data loss)
     private void writeAll(List<Publisher> publishers) throws IOException {
         Path temp = filePath.resolveSibling("publishers_temp.txt");
         try (BufferedWriter writer = Files.newBufferedWriter(temp, StandardCharsets.UTF_8)) {

@@ -1,4 +1,8 @@
-<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ page contentType="text/html;charset=UTF-8" import="com.bookstore.model.User" %>
+<%
+    User cu = (User) session.getAttribute("loggedUser");
+    boolean adminCreating = cu != null && "Admin".equalsIgnoreCase(cu.getRole());
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,73 +11,21 @@
   <title>Aura Books - User Register</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    body {
-      background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 27, 75, 0.85)),
-      url('https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=1920&auto=format&fit=crop');
-      background-size: cover !important;
-      background-position: center !important;
-      background-repeat: no-repeat !important;
-      background-attachment: fixed !important;
-      min-height: 100vh;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: #f8fafc;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px 0;
-    }
-    .glass-card {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 16px;
-      padding: 40px;
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-      width: 100%;
-      max-width: 480px;
-    }
-    .form-control, .form-select {
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #fff;
-      border-radius: 8px;
-      padding: 10px 12px;
-    }
-    .form-control:focus, .form-select:focus {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: #6366f1;
-      color: #fff;
-      box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25);
-    }
-    .form-control::placeholder { color: rgba(255, 255, 255, 0.5); }
-    .form-select option { color: #0f172a; }
-    .btn-custom {
-      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-      border: none;
-      color: white;
-      padding: 12px;
-      border-radius: 8px;
-      font-weight: 600;
-      width: 100%;
-      transition: all 0.3s ease;
-    }
-    .btn-custom:hover {
-      background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-      color: white;
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Great+Vibes&family=Lato:wght@400;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="<%= request.getContextPath() %>/css/aura.css">
 </head>
-<body>
+<body class="aura">
+<% request.setAttribute("navActive", adminCreating ? "user" : "register"); %>
+<%@ include file="/WEB-INF/navbar.jspf" %>
 
-<div class="glass-card">
+<main class="auth-wrap">
+<div class="auth-card">
   <div class="text-center mb-4">
-    <i class="fa-solid fa-user-plus fa-3x mb-3" style="color: #818cf8;"></i>
-    <h2 class="fw-bold">Create Account</h2>
-    <p class="text-light opacity-75">Join Aura Books community today</p>
+    <i class="fa-solid fa-user-plus fa-3x mb-3"></i>
+    <h2 class="fw-bold"><%= adminCreating ? "Add New User" : "Create Account" %></h2>
+    <p class="text-light opacity-75"><%= adminCreating ? "Create a customer or admin account" : "Join Aura Books community today" %></p>
   </div>
 
   <% String msg = request.getParameter("msg");
@@ -82,7 +34,6 @@
   <% } %>
 
   <form action="${pageContext.request.contextPath}/user" method="POST">
-      <input type="hidden" name="action" value="add">
     <input type="hidden" name="action" value="add">
     <div class="mb-3">
       <label class="form-label"><i class="fa-solid fa-user me-2"></i>Username</label>
@@ -92,6 +43,7 @@
       <label class="form-label"><i class="fa-solid fa-lock me-2"></i>Password</label>
       <input type="password" name="password" class="form-control" placeholder="Create a password" required>
     </div>
+    <% if (adminCreating) { %>
     <div class="mb-4">
       <label class="form-label"><i class="fa-solid fa-id-badge me-2"></i>Role</label>
       <select name="role" class="form-select">
@@ -99,12 +51,15 @@
         <option>Admin</option>
       </select>
     </div>
-    <button type="submit" class="btn btn-custom mb-3">Register</button>
+    <% } %>
+    <button type="submit" class="btn btn-custom mb-3"><%= adminCreating ? "Add User" : "Register" %></button>
     <div class="text-center">
-      <p class="small text-light opacity-75"><a href="user" class="text-decoration-none" style="color: #818cf8;">Back to user list</a></p>
+      <p class="small text-light opacity-75">
+        <a href="<%= adminCreating ? "user" : "login" %>" class="text-decoration-none">
+          <%= adminCreating ? "Back to user list" : "Back to login" %></a></p>
     </div>
   </form>
 </div>
-
+</main>
 </body>
 </html>

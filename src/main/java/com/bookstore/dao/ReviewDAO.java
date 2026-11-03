@@ -3,6 +3,7 @@ package com.bookstore.dao;
 import com.bookstore.model.PublicReview;
 import com.bookstore.model.Review;
 import com.bookstore.model.VerifiedReview;
+import com.bookstore.util.DataPaths;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -13,9 +14,9 @@ import java.util.List;
 public class ReviewDAO {
     private final Path filePath;
 
-    // Same default folder as the User module
+    // Default constructor using DataPaths
     public ReviewDAO() {
-        this(System.getProperty("user.home") + "/bookstore-data");
+        this(DataPaths.dataDir());
     }
 
     public ReviewDAO(String dataDir) {

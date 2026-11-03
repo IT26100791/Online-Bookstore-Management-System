@@ -2,11 +2,11 @@ package com.bookstore.servlet;
 
 import com.bookstore.dao.PublisherDAO;
 import com.bookstore.model.Publisher;
+import com.bookstore.util.SessionUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
-import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
 
@@ -16,13 +16,8 @@ public class PublisherServlet extends HttpServlet {
 
     @Override
     public void init() {
-        String dir = getServletContext().getInitParameter("dataDir");
-        if (dir == null || dir.trim().isEmpty() || !new File(dir).exists()) {
-            File homeDir = new File(System.getProperty("user.home"), "bookstore-data");
-            if (!homeDir.exists()) homeDir.mkdirs();
-            dir = homeDir.getAbsolutePath();
-        }
-        dao = new PublisherDAO(dir);
+        // Using the updated default constructor
+        dao = new PublisherDAO();
     }
 
     @Override
@@ -32,18 +27,15 @@ public class PublisherServlet extends HttpServlet {
         if (action == null) action = "list";
         req.setAttribute("msg", req.getParameter("msg"));
 
+        // customers can only view the list; add/edit pages are Admin only
+        if (("new".equals(action) || "edit".equals(action)) && !SessionUtil.isAdmin(req)) {
+            resp.sendRedirect("publisher?msg=Access+denied");
+            return;
+        }
+
         switch (action) {
             case "new":
                 req.getRequestDispatcher("/publisher-form.jsp").forward(req, resp);
-                break;
-            case "view":
-                Publisher v = dao.findById(req.getParameter("id"));
-                if (v == null) {
-                    resp.sendRedirect("publisher?msg=Publisher+not+found");
-                    return;
-                }
-                req.setAttribute("publisher", v);
-                req.getRequestDispatcher("/publisher-view.jsp").forward(req, resp);
                 break;
             case "edit":
                 Publisher p = dao.findById(req.getParameter("id"));
@@ -64,12 +56,17 @@ public class PublisherServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
+
+        // add / update / delete are Admin only
+        if (!SessionUtil.isAdmin(req)) {
+            resp.sendRedirect("publisher?msg=Access+denied");
+            return;
+        }
+
         String action = req.getParameter("action");
         String id = trim(req.getParameter("id"));
         String name = trim(req.getParameter("name"));
         String phone = trim(req.getParameter("phone"));
-        String type = trim(req.getParameter("type"));     // LOCAL / INTERNATIONAL
-        String extra = trim(req.getParameter("extra"));   // district / country
 
         switch (action == null ? "" : action) {
             case "add":
@@ -77,23 +74,16 @@ public class PublisherServlet extends HttpServlet {
                 boolean isUpdate = "update".equals(action);
                 String back = isUpdate ? "publisher?action=edit&id=" + enc(id) : "publisher?action=new";
 
-                if (id.isEmpty() || name.isEmpty() || phone.isEmpty() || type.isEmpty() || extra.isEmpty()) {
+                if (id.isEmpty() || name.isEmpty() || phone.isEmpty()) {
                     resp.sendRedirect(back + "&msg=All+fields+are+required");
                     return;
                 }
-                if (id.contains(",") || name.contains(",") || phone.contains(",") || extra.contains(",")) {
+                if (id.contains(",") || name.contains(",") || phone.contains(",")) {
                     resp.sendRedirect(back + "&msg=Commas+are+not+allowed");
                     return;
                 }
 
-                Publisher publisher;
-                try {
-                    publisher = PublisherDAO.create(type, id, name, phone, extra);
-                } catch (IllegalArgumentException e) {
-                    resp.sendRedirect(back + "&msg=" + enc(e.getMessage()));
-                    return;
-                }
-
+                Publisher publisher = new Publisher(id, name, phone);
                 if (isUpdate) {
                     boolean ok = dao.update(publisher);
                     resp.sendRedirect("publisher?msg=" + (ok ? "Publisher+updated" : "Publisher+not+found"));

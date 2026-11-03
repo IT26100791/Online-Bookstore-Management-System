@@ -1,6 +1,7 @@
 package com.bookstore.dao;
 
 import com.bookstore.model.Order;
+import com.bookstore.util.DataPaths;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -10,6 +11,11 @@ import java.util.List;
 
 public class OrderDAO {
     private final Path filePath;
+
+    // Default constructor using DataPaths
+    public OrderDAO() {
+        this(DataPaths.dataDir());
+    }
 
     public OrderDAO(String dataDir) {
         this.filePath = Paths.get(dataDir, "orders.txt");

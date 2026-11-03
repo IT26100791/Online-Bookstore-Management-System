@@ -2,6 +2,7 @@ package com.bookstore.servlet;
 
 import com.bookstore.dao.UserDAO;
 import com.bookstore.model.User;
+import com.bookstore.util.PasswordUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -19,6 +20,25 @@ public class UserServlet extends HttpServlet {
     public void init() throws ServletException {
         super.init();
         dao = new UserDAO();   // uses DataPaths.dataDir()
+    }
+
+    /** Logged-in user from the session, or null for guests. */
+    private User currentUser(HttpServletRequest req) {
+        HttpSession s = req.getSession(false);
+        Object o = (s == null) ? null : s.getAttribute("loggedUser");
+        return (o instanceof User) ? (User) o : null;
+    }
+
+    private boolean isAdmin(User u) {
+        return u != null && "Admin".equalsIgnoreCase(u.getRole());
+    }
+
+    private int countAdmins() throws IOException {
+        int n = 0;
+        for (User u : dao.findAll()) {
+            if ("Admin".equalsIgnoreCase(u.getRole())) n++;
+        }
+        return n;
     }
 
     @Override
@@ -42,6 +62,14 @@ public class UserServlet extends HttpServlet {
             req.getRequestDispatcher("/register.jsp").forward(req, resp);
             return;
         }
+
+        // everything below is user management: Admin only
+        // (AccessFilter also blocks this, this is a second safety check)
+        if (!isAdmin(currentUser(req))) {
+            resp.sendRedirect("login.jsp?msg=Admin+access+required");
+            return;
+        }
+
         if ("edit".equals(action)) {
             User u = dao.findByUsername(req.getParameter("username"));
             if (u == null) {
@@ -65,14 +93,17 @@ public class UserServlet extends HttpServlet {
         String path = req.getServletPath();
         String action = req.getParameter("action");
 
+        // ---------- LOGIN ----------
         if ("/login".equals(path)) {
             String username = req.getParameter("username");
             String pass = req.getParameter("password");
             User u = dao.authenticate(username == null ? "" : username.trim(),
                     pass == null ? "" : pass);
             if (u != null) {
+                HttpSession old = req.getSession(false);
+                if (old != null) old.invalidate();          // avoid session fixation
                 req.getSession(true).setAttribute("loggedUser", u);
-                if ("Admin".equalsIgnoreCase(u.getRole())) {
+                if (isAdmin(u)) {
                     resp.sendRedirect("user");
                 } else {
                     resp.sendRedirect("welcome.jsp");
@@ -83,27 +114,69 @@ public class UserServlet extends HttpServlet {
             return;
         }
 
+        User current = currentUser(req);
+        boolean adminCreating = isAdmin(current);
+
         String username = req.getParameter("username");
         String pass = req.getParameter("password");
         String role = req.getParameter("role");
 
+        // ---------- REGISTER / ADD ----------
         if ("add".equals(action)) {
             if (username == null || username.trim().isEmpty()
                     || pass == null || pass.isEmpty()
-                    || username.contains(",") || pass.contains(",")) {
+                    || username.contains(",")) {
                 resp.sendRedirect("register.jsp?msg=Invalid+input");
                 return;
             }
-            String roleToSave = "Admin".equalsIgnoreCase(role) ? "Admin" : "Customer";
-            boolean ok = dao.add(new User(username.trim(), pass, roleToSave));
-            resp.sendRedirect(ok ? "user?msg=User+added+successfully"
-                    : "register.jsp?msg=Username+already+exists");
-        } else if ("update".equals(action)) {
-            dao.update(username, pass, role);
+            // only an Admin can create another Admin; public sign-ups are Customers
+            String roleToSave = (adminCreating && "Admin".equalsIgnoreCase(role)) ? "Admin" : "Customer";
+            boolean ok = dao.add(new User(username.trim(), PasswordUtil.hash(pass), roleToSave));
+            if (!ok) {
+                resp.sendRedirect("register.jsp?msg=Username+already+exists");
+            } else if (adminCreating) {
+                resp.sendRedirect("user?msg=User+added+successfully");
+            } else {
+                resp.sendRedirect("login.jsp?msg=Account+created.+Please+login");
+            }
+            return;
+        }
+
+        // ---------- update / delete: Admin only ----------
+        if (!adminCreating) {
+            resp.sendRedirect("login.jsp?msg=Admin+access+required");
+            return;
+        }
+
+        User target = dao.findByUsername(username);
+        if (target == null) {
+            resp.sendRedirect("user?msg=Username+not+found");
+            return;
+        }
+        boolean targetIsAdmin = "Admin".equalsIgnoreCase(target.getRole());
+
+        if ("update".equals(action)) {
+            String newRole = "Admin".equalsIgnoreCase(role) ? "Admin" : "Customer";
+            if (targetIsAdmin && "Customer".equals(newRole) && countAdmins() <= 1) {
+                resp.sendRedirect("user?msg=Cannot+demote+the+last+admin");
+                return;
+            }
+            String newHash = (pass == null || pass.isEmpty()) ? null : PasswordUtil.hash(pass);
+            dao.update(username, newHash, newRole);
             resp.sendRedirect("user?msg=User+updated+successfully");
+
         } else if ("delete".equals(action)) {
+            if (username.equalsIgnoreCase(current.getUsername())) {
+                resp.sendRedirect("user?msg=You+cannot+delete+your+own+account");
+                return;
+            }
+            if (targetIsAdmin && countAdmins() <= 1) {
+                resp.sendRedirect("user?msg=Cannot+delete+the+last+admin");
+                return;
+            }
             dao.delete(username);
             resp.sendRedirect("user?msg=User+deleted+successfully");
+
         } else {
             resp.sendRedirect("user");
         }

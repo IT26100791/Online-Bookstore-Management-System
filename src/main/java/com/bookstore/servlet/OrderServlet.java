@@ -2,13 +2,15 @@ package com.bookstore.servlet;
 
 import com.bookstore.dao.OrderDAO;
 import com.bookstore.model.Order;
+import com.bookstore.model.User;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
-import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
 
 @WebServlet("/order")
 public class OrderServlet extends HttpServlet {
@@ -16,18 +18,29 @@ public class OrderServlet extends HttpServlet {
 
     @Override
     public void init() {
-        String dir = getServletContext().getInitParameter("dataDir");
-        if (dir == null || dir.trim().isEmpty() || !new File(dir).exists()) {
-            File homeDir = new File(System.getProperty("user.home"), "bookstore-data");
-            if (!homeDir.exists()) homeDir.mkdirs();
-            dir = homeDir.getAbsolutePath();
-        }
-        dao = new OrderDAO(dir);
+        dao = new OrderDAO();
+    }
+
+    private User currentUser(HttpServletRequest req) {
+        HttpSession s = req.getSession(false);
+        Object o = (s == null) ? null : s.getAttribute("loggedUser");
+        return (o instanceof User) ? (User) o : null;
+    }
+
+    private boolean isAdmin(User u) {
+        return u != null && "Admin".equalsIgnoreCase(u.getRole());
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+        User user = currentUser(req);
+        if (user == null) {
+            resp.sendRedirect(req.getContextPath() + "/login.jsp?msg=Please+login+first");
+            return;
+        }
+        boolean admin = isAdmin(user);
+
         String action = req.getParameter("action");
         if (action == null) action = "list";
         req.setAttribute("msg", req.getParameter("msg"));
@@ -37,6 +50,10 @@ public class OrderServlet extends HttpServlet {
                 req.getRequestDispatcher("/order-form.jsp").forward(req, resp);
                 break;
             case "edit":
+                if (!admin) {                       // customers cannot edit orders
+                    resp.sendRedirect("order?msg=Access+denied");
+                    return;
+                }
                 Order o = dao.findById(req.getParameter("id"));
                 if (o == null) {
                     resp.sendRedirect("order?msg=Order+not+found");
@@ -46,7 +63,15 @@ public class OrderServlet extends HttpServlet {
                 req.getRequestDispatcher("/order-form.jsp").forward(req, resp);
                 break;
             default:
-                req.setAttribute("orders", dao.findAll());
+                List<Order> all = dao.findAll();
+                if (!admin) {                       // customers see only their own orders
+                    List<Order> mine = new ArrayList<>();
+                    for (Order x : all) {
+                        if (x.getCustomerName().equalsIgnoreCase(user.getUsername())) mine.add(x);
+                    }
+                    all = mine;
+                }
+                req.setAttribute("orders", all);
                 req.getRequestDispatcher("/order-list.jsp").forward(req, resp);
         }
     }
@@ -55,6 +80,14 @@ public class OrderServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
+
+        User user = currentUser(req);
+        if (user == null) {
+            resp.sendRedirect(req.getContextPath() + "/login.jsp?msg=Please+login+first");
+            return;
+        }
+        boolean admin = isAdmin(user);
+
         String action = req.getParameter("action");
         String id = trim(req.getParameter("id"));
         String customerName = trim(req.getParameter("customerName"));
@@ -65,6 +98,18 @@ public class OrderServlet extends HttpServlet {
             case "add":
             case "update": {
                 boolean isUpdate = "update".equals(action);
+
+                if (isUpdate && !admin) {           // customers can only place orders
+                    resp.sendRedirect("order?msg=Access+denied");
+                    return;
+                }
+                if (!admin) {
+                    // customer: name and status come from the server, not from the form
+                    customerName = user.getUsername();
+                    status = "Pending";
+                    id = "ORD" + System.currentTimeMillis();
+                }
+
                 String back = isUpdate ? "order?action=edit&id=" + enc(id) : "order?action=new";
 
                 if (id.isEmpty() || customerName.isEmpty() || bookTitle.isEmpty() || status.isEmpty()) {
@@ -86,10 +131,15 @@ public class OrderServlet extends HttpServlet {
                 }
                 break;
             }
-            case "delete":
+            case "delete": {
+                if (!admin) {
+                    resp.sendRedirect("order?msg=Access+denied");
+                    return;
+                }
                 boolean deleted = dao.delete(id);
                 resp.sendRedirect("order?msg=" + (deleted ? "Order+deleted" : "Order+not+found"));
                 break;
+            }
             default:
                 resp.sendRedirect("order");
         }
@@ -103,3 +153,4 @@ public class OrderServlet extends HttpServlet {
         return URLEncoder.encode(s, "UTF-8");
     }
 }
+

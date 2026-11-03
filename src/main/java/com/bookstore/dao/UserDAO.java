@@ -2,6 +2,7 @@ package com.bookstore.dao;
 
 import com.bookstore.model.*;
 import com.bookstore.util.DataPaths;
+import com.bookstore.util.PasswordUtil;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -33,6 +34,12 @@ public class UserDAO {
             }
             if (!Files.exists(filePath)) {
                 Files.createFile(filePath);
+            }
+            // first run: create a default admin so someone can log in
+            if (Files.size(filePath) == 0) {
+                String line = "admin," + PasswordUtil.hash("admin123") + ",Admin" + System.lineSeparator();
+                Files.write(filePath, line.getBytes(StandardCharsets.UTF_8));
+                System.out.println("Default admin created -> username: admin / password: admin123");
             }
         } catch (IOException e) {
             throw new RuntimeException("Cannot prepare users file: " + e.getMessage(), e);
@@ -74,10 +81,10 @@ public class UserDAO {
         return null;
     }
 
-    // LOGIN check
+    // LOGIN check (supports hashed and old plain-text passwords)
     public synchronized User authenticate(String username, String password) throws IOException {
         User u = findByUsername(username);
-        if (u != null && u.getPassword().equals(password)) {
+        if (u != null && PasswordUtil.matches(password, u.getPassword())) {
             return u;
         }
         return null;
@@ -94,13 +101,15 @@ public class UserDAO {
         return true;
     }
 
-    // UPDATE
+    // UPDATE (newPassword == null -> keep the current password)
     public synchronized boolean update(String username, String newPassword, String newRole) throws IOException {
         List<User> users = findAll();
         boolean found = false;
         for (int i = 0; i < users.size(); i++) {
-            if (users.get(i).getUsername().equalsIgnoreCase(username)) {
-                users.set(i, createUser(users.get(i).getUsername(), newPassword, newRole));
+            User old = users.get(i);
+            if (old.getUsername().equalsIgnoreCase(username)) {
+                String pw = (newPassword != null) ? newPassword : old.getPassword();
+                users.set(i, createUser(old.getUsername(), pw, newRole));
                 found = true;
             }
         }

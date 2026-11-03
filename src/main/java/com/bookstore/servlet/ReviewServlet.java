@@ -3,12 +3,12 @@ package com.bookstore.servlet;
 import com.bookstore.dao.ReviewDAO;
 import com.bookstore.model.PublicReview;
 import com.bookstore.model.Review;
+import com.bookstore.model.VerifiedReview;
 import com.bookstore.util.SessionUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
-import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
 
@@ -18,13 +18,8 @@ public class ReviewServlet extends HttpServlet {
 
     @Override
     public void init() {
-        String dir = getServletContext().getInitParameter("dataDir");
-        if (dir == null || dir.trim().isEmpty() || !new File(dir).exists()) {
-            File homeDir = new File(System.getProperty("user.home"), "bookstore-data");
-            if (!homeDir.exists()) homeDir.mkdirs();
-            dir = homeDir.getAbsolutePath();
-        }
-        dao = new ReviewDAO(dir);
+        // Using the updated default constructor
+        dao = new ReviewDAO();
     }
 
     @Override
@@ -33,6 +28,12 @@ public class ReviewServlet extends HttpServlet {
         String action = req.getParameter("action");
         if (action == null) action = "list";
         req.setAttribute("msg", req.getParameter("msg"));
+
+        // customers can read reviews and write new ones; only Admin can edit
+        if ("edit".equals(action) && !SessionUtil.isAdmin(req)) {
+            resp.sendRedirect("review?msg=Access+denied");
+            return;
+        }
 
         switch (action) {
             case "new":
@@ -58,6 +59,13 @@ public class ReviewServlet extends HttpServlet {
             throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         String action = req.getParameter("action");
+
+        // customers may only add; update / delete are Admin only
+        if (!SessionUtil.isAdmin(req) && !"add".equals(action)) {
+            resp.sendRedirect("review?msg=Access+denied");
+            return;
+        }
+
         String id = trim(req.getParameter("id"));
         String bookTitle = trim(req.getParameter("bookTitle"));
         String rating = trim(req.getParameter("rating"));
@@ -86,9 +94,23 @@ public class ReviewServlet extends HttpServlet {
                     return;
                 }
 
+                // new review: written by the logged-in user.
+                // edit: keep the original reviewer and review type
+                String reviewer = SessionUtil.getUsername(req);
+                boolean verified = false;
+                if (isUpdate) {
+                    Review old = dao.findById(id);
+                    if (old != null) {
+                        reviewer = old.getReviewer();
+                        verified = "VERIFIED".equalsIgnoreCase(old.getType());
+                    }
+                }
+
                 Review review;
                 try {
-                    review = new PublicReview(id, bookTitle, ratingValue, SessionUtil.getUsername(req), comment);
+                    review = verified
+                            ? new VerifiedReview(id, bookTitle, ratingValue, reviewer, comment)
+                            : new PublicReview(id, bookTitle, ratingValue, reviewer, comment);
                 } catch (IllegalArgumentException e) {
                     resp.sendRedirect(back + "&msg=" + enc(e.getMessage()));
                     return;
