@@ -67,6 +67,8 @@ public class AuthorServlet extends HttpServlet {
         String id = trim(req.getParameter("id"));
         String name = trim(req.getParameter("name"));
         String email = trim(req.getParameter("email"));
+        String type = "International".equalsIgnoreCase(trim(req.getParameter("authorType")))
+                ? "International" : "Local";
 
         switch (action == null ? "" : action) {
             case "add":
@@ -83,7 +85,7 @@ public class AuthorServlet extends HttpServlet {
                     return;
                 }
 
-                Author author = new Author(id, name, email);
+                Author author = dao.createAuthor(id, name, email, type);
                 if (isUpdate) {
                     boolean ok = dao.update(author);
                     resp.sendRedirect("author?msg=" + (ok ? "Author+updated" : "Author+not+found"));

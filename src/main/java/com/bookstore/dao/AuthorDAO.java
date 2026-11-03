@@ -1,6 +1,8 @@
 package com.bookstore.dao;
 
 import com.bookstore.model.Author;
+import com.bookstore.model.InternationalAuthor;
+import com.bookstore.model.LocalAuthor;
 import com.bookstore.util.DataPaths;
 
 import java.io.*;
@@ -28,6 +30,12 @@ public class AuthorDAO {
         }
     }
 
+    // Factory: returns the right subclass (same idea as createUser in UserDAO)
+    public Author createAuthor(String id, String name, String email, String type) {
+        if ("International".equalsIgnoreCase(type)) return new InternationalAuthor(id, name, email);
+        return new LocalAuthor(id, name, email);
+    }
+
     public synchronized List<Author> findAll() throws IOException {
         List<Author> authors = new ArrayList<>();
         try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
@@ -35,7 +43,9 @@ public class AuthorDAO {
             while ((line = reader.readLine()) != null) {
                 String[] d = line.split(",", -1);
                 if (d.length >= 3) {
-                    authors.add(new Author(d[0].trim(), d[1].trim(), d[2].trim()));
+                    // old 3-column lines (before types existed) are treated as Local
+                    String type = d.length >= 4 ? d[3].trim() : "Local";
+                    authors.add(createAuthor(d[0].trim(), d[1].trim(), d[2].trim(), type));
                 }
             }
         }
