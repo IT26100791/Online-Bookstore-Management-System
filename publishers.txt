@@ -1,0 +1,4 @@
+P001,Bloomsbury Publishing,+44-207-631-5600
+P002,HarperCollins Publishers,+1-212-207-7000
+P003,Penguin Random House,+1-212-782-9000
+P004,Simon & Schuster,+1-212-698-7000

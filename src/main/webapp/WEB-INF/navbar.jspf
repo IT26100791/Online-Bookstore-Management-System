@@ -1,0 +1,33 @@
+<%@ page import="com.bookstore.model.User" %>
+<%
+    User navUser = (User) session.getAttribute("loggedUser");
+    boolean navAdmin = navUser != null && "Admin".equalsIgnoreCase(navUser.getRole());
+    String navActive = (String) request.getAttribute("navActive");
+    if (navActive == null) navActive = "";
+%>
+<header class="site-bar">
+    <div class="site-bar__inner">
+        <a class="brand" href="index.jsp"><span class="brand-script">Aura Books</span><span class="brand-sub">Online bookstore</span></a>
+        <nav class="site-nav" aria-label="Main">
+            <% if (navUser != null) { %>
+            <a href="book"<%= "book".equals(navActive) ? " aria-current=\"page\"" : "" %>>Books</a>
+            <a href="author"<%= "author".equals(navActive) ? " aria-current=\"page\"" : "" %>>Authors</a>
+            <a href="publisher"<%= "publisher".equals(navActive) ? " aria-current=\"page\"" : "" %>>Publishers</a>
+            <a href="order"<%= "order".equals(navActive) ? " aria-current=\"page\"" : "" %>>Orders</a>
+            <a href="review"<%= "review".equals(navActive) ? " aria-current=\"page\"" : "" %>>Reviews</a>
+            <% } %>
+            <% if (navAdmin) { %>
+            <a href="user"<%= "user".equals(navActive) ? " aria-current=\"page\"" : "" %>>Users</a>
+            <% } %>
+        </nav>
+        <div class="site-bar__end">
+            <% if (navUser == null) { %>
+            <a href="login"<%= "login".equals(navActive) ? " aria-current=\"page\"" : "" %>>Login</a>
+            <a href="user?action=new"<%= "register".equals(navActive) ? " aria-current=\"page\"" : "" %>>Register</a>
+            <% } else { %>
+            <span><%= navUser.getUsername().replace("<", "&lt;") %> (<%= navUser.getRole() %>)</span>
+            <a href="logout">Logout</a>
+            <% } %>
+        </div>
+    </div>
+</header>

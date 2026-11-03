@@ -8,19 +8,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background: linear-gradient(135deg, #0f172a, #1e1b4b); min-height: 100vh; color: #f8fafc; padding: 40px 0; }
-        .glass { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 30px; }
-        .table { color: #f8fafc; --bs-table-bg: transparent; --bs-table-color: #f8fafc; --bs-table-hover-bg: rgba(255,255,255,0.06); --bs-table-hover-color: #fff; }
-        .form-control { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.2); }
-        .form-control:focus { background: rgba(255,255,255,0.12); color: #fff; }
-        .form-control:read-only { opacity: .7; }
-    </style>
     <title>Add Author</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Great+Vibes&family=Lato:wght@400;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/css/aura.css">
 </head>
-<body>
+<body class="aura">
+<header class="site-bar">
+    <div class="site-bar__inner">
+        <a class="brand" href="index.jsp"><span class="brand-script">Aura Books</span><span class="brand-sub">Online bookstore</span></a>
+        <nav class="site-nav" aria-label="Main"><a href="book">Books</a><a href="author" aria-current="page">Authors</a><a href="publisher">Publishers</a><a href="order">Orders</a><a href="review">Reviews</a><a href="user">Users</a></nav>
+        <div class="site-bar__end"><a href="login">Login</a><a href="user?action=new">Register</a></div>
+    </div>
+</header>
 <div class="container" style="max-width:600px">
-  <div class="glass">
+  <div class="panel panel-narrow">
     <h2 class="fw-bold mb-4">Add New Author</h2>
 
     <% String msg = (String) request.getAttribute("msg");
