@@ -3,7 +3,7 @@ package com.bookstore.model;
 public class LocalAuthor extends Author {
 
     public LocalAuthor(String authorId, String name, String country) {
-        super(authorId, name, country, "Local");
+        super(authorId, name, country);
     }
 
     @Override

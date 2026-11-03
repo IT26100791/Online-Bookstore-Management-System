@@ -1,21 +1,45 @@
 package com.bookstore.model;
 
 public class Author {
-    private final String id;
-    private final String name;
-    private final String email;
+    private String authorId;
+    private String name;
+    private String country;
 
-    public Author(String id, String name, String email) {
-        this.id = id;
+    public Author(String authorId, String name, String country) {
+        this.authorId = authorId;
         this.name = name;
-        this.email = email;
+        this.country = country;
     }
 
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public String getEmail() { return email; }
+    public String getId() {
+        return authorId;
+    }
+
+    public void setId(String authorId) {
+        this.authorId = authorId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getTypeDescription() {
+        return "Standard author";
+    }
 
     public String toFileLine() {
-        return id + "," + name + "," + email;
+        return authorId + "," + name + "," + country;
     }
 }

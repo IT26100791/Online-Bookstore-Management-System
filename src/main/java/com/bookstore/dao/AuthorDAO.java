@@ -12,7 +12,6 @@ import java.util.List;
 public class AuthorDAO {
     private final Path filePath;
 
-    // Default constructor using DataPaths
     public AuthorDAO() {
         this(DataPaths.dataDir());
     }

@@ -3,7 +3,7 @@ package com.bookstore.model;
 public class InternationalAuthor extends Author {
 
     public InternationalAuthor(String authorId, String name, String country) {
-        super(authorId, name, country, "International");
+        super(authorId, name, country);
     }
 
     @Override
