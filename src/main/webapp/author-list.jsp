@@ -48,7 +48,7 @@
             <table class="table table-dark-glass table-hover rounded overflow-hidden">
                 <thead>
                 <tr>
-                    <th>#</th><th>Author ID</th><th>Name</th><th>Email</th>
+                    <th>#</th><th>Author ID</th><th>Name</th><th>Email</th><th>Type</th><th>Description</th>
                     <% if (canEdit) { %><th class="text-center">Actions</th><% } %>
                 </tr>
                 </thead>
@@ -64,6 +64,8 @@
                     <td><%= esc(a.getId()) %></td>
                     <td><%= esc(a.getName()) %></td>
                     <td><%= esc(a.getEmail()) %></td>
+                    <td><span class="badge <%= "International".equalsIgnoreCase(a.getAuthorType()) ? "bg-success" : "bg-secondary" %>"><%= esc(a.getAuthorType()) %></span></td>
+                    <td><%= esc(a.getTypeDescription()) %></td>
                     <% if (canEdit) { %>
 <td class="text-center">
                         <a class="btn btn-sm btn-warning btn-action me-1"
@@ -80,7 +82,7 @@
                 </tr>
                 <%      }
                     } else { %>
-                <tr><td colspan="<%= canEdit ? 5 : 4 %>" class="text-center opacity-75">No authors yet.</td></tr>
+                <tr><td colspan="<%= canEdit ? 7 : 6 %>" class="text-center opacity-75">No authors yet.</td></tr>
                 <% } %>
                 </tbody>
             </table>

@@ -1,4 +1,2 @@
-A001,J.K. Rowling,jk.rowling@pottermore.com
-A002,George R.R. Martin,grrm@georgerrmartin.com
-A003,J.R.R. Tolkien,tolkien@tolkiensociety.org
-A004,Agatha Christie,agatha@christie.com
+A001,James Clear,jamesclear@gmail.com,International
+A002,Chandana Mendis,cm@gmail.com,Local

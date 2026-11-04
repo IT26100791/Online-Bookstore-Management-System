@@ -8,6 +8,7 @@
 <%
     Author author = (Author) request.getAttribute("author");
     boolean editing = (author != null);
+    boolean isIntl = editing && "International".equalsIgnoreCase(author.getAuthorType());
     String msg = (String) request.getAttribute("msg");
 %>
 <!DOCTYPE html>
@@ -22,6 +23,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Great+Vibes&family=Lato:wght@400;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/css/aura.css">
+    <style>
+        .form-select { background-color: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff; }
+        .form-select:focus { background-color: rgba(255,255,255,0.12); color: #fff; }
+        .form-select option { color: #000; }
+    </style>
 </head>
 <body class="aura">
 <% boolean canEdit = com.bookstore.util.SessionUtil.isAdmin(request); %>
@@ -54,6 +60,13 @@
                 <label class="form-label">Email Address</label>
                 <input type="email" name="email" class="form-control" required
                        value="<%= editing ? esc(author.getEmail()) : "" %>">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Author Type</label>
+                <select name="authorType" class="form-select">
+                    <option value="Local" <%= isIntl ? "" : "selected" %>>Local</option>
+                    <option value="International" <%= isIntl ? "selected" : "" %>>International</option>
+                </select>
             </div>
 
             <button type="submit" class="btn btn-primary">
