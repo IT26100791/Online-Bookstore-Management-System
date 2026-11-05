@@ -14,10 +14,12 @@ import java.net.URLEncoder;
 
 @WebServlet("/review")
 public class ReviewServlet extends HttpServlet {
+
     // sensible upper limits so one review can never make a huge line in reviews.txt
     private static final int MAX_ID = 30;
     private static final int MAX_TITLE = 200;
     private static final int MAX_COMMENT = 1000;
+    private static final int MAX_REVIEWER = 50;
 
     private ReviewDAO dao;
 
@@ -137,6 +139,24 @@ public class ReviewServlet extends HttpServlet {
                     }
                 }
 
+                // Only the Admin can choose the review type and the reviewer name.
+                // (A customer can never mark their own review as "verified".)
+                if (SessionUtil.isAdmin(req)) {
+                    String typeParam = trim(req.getParameter("type"));
+                    String reviewerParam = trim(req.getParameter("reviewer"));
+                    if ("VERIFIED".equalsIgnoreCase(typeParam)) verified = true;
+                    else if ("PUBLIC".equalsIgnoreCase(typeParam)) verified = false;
+                    if (reviewerParam.length() > MAX_REVIEWER) {
+                        showForm(req, resp, isUpdate, id, bookTitle, rating, comment,
+                                "Reviewer name is too long (max " + MAX_REVIEWER + " characters).");
+                        return;
+                    }
+                    if (!reviewerParam.isEmpty()) reviewer = reviewerParam;
+                }
+                // never write "null" or a comma into the file
+                if (reviewer == null || reviewer.trim().isEmpty()) reviewer = "Guest";
+                reviewer = reviewer.trim().replace(",", " ");
+
                 Review review;
                 try {
                     review = verified
@@ -189,6 +209,8 @@ public class ReviewServlet extends HttpServlet {
         req.setAttribute("formBook", bookTitle);
         req.setAttribute("formRating", rating);
         req.setAttribute("formComment", comment);
+        req.setAttribute("formType", req.getParameter("type"));
+        req.setAttribute("formReviewer", req.getParameter("reviewer"));
         req.getRequestDispatcher("/review-form.jsp").forward(req, resp);
     }
 
