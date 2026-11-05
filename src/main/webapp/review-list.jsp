@@ -185,7 +185,7 @@
                 <thead>
                 <tr>
                     <th>#</th><th>Review ID</th><th>Book Title</th><th>Rating</th><th>Comment</th>
-                    <% if (canEdit) { %><th class="text-center">Actions</th><% } %>
+                    <th class="text-center">Actions</th>
                 </tr>
                 </thead>
                 <tbody id="rvBody">
@@ -220,8 +220,11 @@
                         </div>
                         <div class="rv-text" title="Click to expand / collapse"><%= esc(r.getComment()) %></div>
                     </td>
-                    <% if (canEdit) { %>
                     <td class="text-center text-nowrap">
+                        <a class="btn btn-sm btn-outline-light btn-action me-1" title="View details" aria-label="View details"
+                           href="review?action=view&id=<%= java.net.URLEncoder.encode(r.getReviewId(), "UTF-8") %>">
+                            <i class="fa-solid fa-eye"></i></a>
+                        <% if (canEdit) { %>
                         <a class="btn btn-sm btn-warning btn-action me-1" title="Edit review" aria-label="Edit review"
                            href="review?action=edit&id=<%= java.net.URLEncoder.encode(r.getReviewId(), "UTF-8") %>">
                             <i class="fa-solid fa-pen-to-square"></i></a>
@@ -232,13 +235,13 @@
                             <input type="hidden" name="id" value="<%= esc(r.getReviewId()) %>">
                             <button type="submit" class="btn btn-sm btn-danger btn-action" title="Delete review" aria-label="Delete review"><i class="fa-solid fa-trash"></i></button>
                         </form>
+                        <% } %>
                     </td>
-                    <% } %>
                 </tr>
                 <%      }
                 %>
                 <tr id="rvNoMatch" hidden>
-                    <td colspan="<%= canEdit ? 6 : 5 %>">
+                    <td colspan="6">
                         <div class="rv-empty">
                             <i class="fa-solid fa-magnifying-glass"></i>
                             <p class="mb-0">No reviews match your search.</p>
@@ -247,7 +250,7 @@
                 </tr>
                 <%  } else { %>
                 <tr>
-                    <td colspan="<%= canEdit ? 6 : 5 %>">
+                    <td colspan="6">
                         <div class="rv-empty">
                             <i class="fa-regular fa-comment-dots"></i>
                             <p>No reviews yet.</p>
