@@ -14,6 +14,13 @@ import java.net.URLEncoder;
 
 @WebServlet("/review")
 public class ReviewServlet extends HttpServlet {
+
+    // sensible upper limits so one review can never make a huge line in reviews.txt
+    private static final int MAX_ID = 30;
+    private static final int MAX_TITLE = 200;
+    private static final int MAX_COMMENT = 1000;
+    private static final int MAX_REVIEWER = 50;
+
     private ReviewDAO dao;
 
     @Override
@@ -39,8 +46,21 @@ public class ReviewServlet extends HttpServlet {
             case "new":
                 req.getRequestDispatcher("/review-form.jsp").forward(req, resp);
                 break;
-            case "edit":
-                Review r = dao.findById(req.getParameter("id"));
+
+            case "view": {
+                // anyone can open the details page of a single review
+                Review found = dao.findById(trim(req.getParameter("id")));
+                if (found == null) {
+                    resp.sendRedirect("review?msg=Review+not+found");
+                    return;
+                }
+                req.setAttribute("review", found);
+                req.getRequestDispatcher("/review-view.jsp").forward(req, resp);
+                break;
+            }
+
+            case "edit": {
+                Review r = dao.findById(trim(req.getParameter("id")));
                 if (r == null) {
                     resp.sendRedirect("review?msg=Review+not+found");
                     return;
@@ -48,6 +68,8 @@ public class ReviewServlet extends HttpServlet {
                 req.setAttribute("review", r);
                 req.getRequestDispatcher("/review-form.jsp").forward(req, resp);
                 break;
+            }
+
             default:
                 req.setAttribute("reviews", dao.getAll());
                 req.getRequestDispatcher("/review-list.jsp").forward(req, resp);
@@ -75,14 +97,24 @@ public class ReviewServlet extends HttpServlet {
             case "add":
             case "update": {
                 boolean isUpdate = "update".equals(action);
-                String back = isUpdate ? "review?action=edit&id=" + enc(id) : "review?action=new";
 
                 if (id.isEmpty() || bookTitle.isEmpty() || rating.isEmpty() || comment.isEmpty()) {
-                    resp.sendRedirect(back + "&msg=All+fields+are+required");
+                    showForm(req, resp, isUpdate, id, bookTitle, rating, comment,
+                            "All fields are required.");
                     return;
                 }
-                if (id.contains(",") || bookTitle.contains(",") || rating.contains(",") || comment.contains(",")) {
-                    resp.sendRedirect(back + "&msg=Commas+are+not+allowed");
+                // The file is comma separated. The review id and book title sit in the
+                // middle of each line, so commas are not allowed there. The comment is
+                // the last column (ReviewDAO splits with a limit), so commas are fine in it.
+                if (id.contains(",") || bookTitle.contains(",")) {
+                    showForm(req, resp, isUpdate, id, bookTitle, rating, comment,
+                            "Commas are not allowed in the Review ID or the Book Title.");
+                    return;
+                }
+                if (id.length() > MAX_ID || bookTitle.length() > MAX_TITLE || comment.length() > MAX_COMMENT) {
+                    showForm(req, resp, isUpdate, id, bookTitle, rating, comment,
+                            "Text is too long (ID max " + MAX_ID + ", title max " + MAX_TITLE
+                                    + ", comment max " + MAX_COMMENT + " characters).");
                     return;
                 }
 
@@ -90,12 +122,13 @@ public class ReviewServlet extends HttpServlet {
                 try {
                     ratingValue = Integer.parseInt(rating);
                 } catch (NumberFormatException e) {
-                    resp.sendRedirect(back + "&msg=Rating+must+be+a+number+1-5");
+                    showForm(req, resp, isUpdate, id, bookTitle, rating, comment,
+                            "Rating must be a number from 1 to 5.");
                     return;
                 }
 
-                // new review: written by the logged-in user.
-                // edit: keep the original reviewer and review type
+                // new review: written by the logged-in user, always a PUBLIC review.
+                // edit: keep the original reviewer and review type.
                 String reviewer = SessionUtil.getUsername(req);
                 boolean verified = false;
                 if (isUpdate) {
@@ -106,13 +139,31 @@ public class ReviewServlet extends HttpServlet {
                     }
                 }
 
+                // Only the Admin can choose the review type and the reviewer name.
+                // (A customer can never mark their own review as "verified".)
+                if (SessionUtil.isAdmin(req)) {
+                    String typeParam = trim(req.getParameter("type"));
+                    String reviewerParam = trim(req.getParameter("reviewer"));
+                    if ("VERIFIED".equalsIgnoreCase(typeParam)) verified = true;
+                    else if ("PUBLIC".equalsIgnoreCase(typeParam)) verified = false;
+                    if (reviewerParam.length() > MAX_REVIEWER) {
+                        showForm(req, resp, isUpdate, id, bookTitle, rating, comment,
+                                "Reviewer name is too long (max " + MAX_REVIEWER + " characters).");
+                        return;
+                    }
+                    if (!reviewerParam.isEmpty()) reviewer = reviewerParam;
+                }
+                // never write "null" or a comma into the file
+                if (reviewer == null || reviewer.trim().isEmpty()) reviewer = "Guest";
+                reviewer = reviewer.trim().replace(",", " ");
+
                 Review review;
                 try {
                     review = verified
                             ? new VerifiedReview(id, bookTitle, ratingValue, reviewer, comment)
                             : new PublicReview(id, bookTitle, ratingValue, reviewer, comment);
                 } catch (IllegalArgumentException e) {
-                    resp.sendRedirect(back + "&msg=" + enc(e.getMessage()));
+                    showForm(req, resp, isUpdate, id, bookTitle, rating, comment, e.getMessage());
                     return;
                 }
 
@@ -120,8 +171,12 @@ public class ReviewServlet extends HttpServlet {
                     boolean ok = dao.update(review);
                     resp.sendRedirect("review?msg=" + (ok ? "Review+updated" : "Review+not+found"));
                 } else {
-                    boolean ok = dao.add(review);
-                    resp.sendRedirect(ok ? "review?msg=Review+added" : back + "&msg=Review+ID+already+exists");
+                    if (dao.add(review)) {
+                        resp.sendRedirect("review?msg=Review+added");
+                    } else {
+                        showForm(req, resp, false, id, bookTitle, rating, comment,
+                                "Review ID already exists. Please choose another one.");
+                    }
                 }
                 break;
             }
@@ -134,11 +189,32 @@ public class ReviewServlet extends HttpServlet {
         }
     }
 
-    private String trim(String s) {
-        return s == null ? "" : s.trim();
+    /**
+     * Shows the form again with an error message and with everything the user already typed,
+     * so they do not have to write the whole review again.
+     */
+    private void showForm(HttpServletRequest req, HttpServletResponse resp, boolean isUpdate,
+                          String id, String bookTitle, String rating, String comment, String message)
+            throws ServletException, IOException {
+        if (isUpdate) {
+            Review existing = dao.findById(id);
+            if (existing == null) {
+                resp.sendRedirect("review?msg=Review+not+found");
+                return;
+            }
+            req.setAttribute("review", existing);   // keeps the form in "edit" mode
+        }
+        req.setAttribute("msg", message);
+        req.setAttribute("formId", id);
+        req.setAttribute("formBook", bookTitle);
+        req.setAttribute("formRating", rating);
+        req.setAttribute("formComment", comment);
+        req.setAttribute("formType", req.getParameter("type"));
+        req.setAttribute("formReviewer", req.getParameter("reviewer"));
+        req.getRequestDispatcher("/review-form.jsp").forward(req, resp);
     }
 
-    private String enc(String s) throws IOException {
-        return URLEncoder.encode(s, "UTF-8");
+    private String trim(String s) {
+        return s == null ? "" : s.trim();
     }
 }
