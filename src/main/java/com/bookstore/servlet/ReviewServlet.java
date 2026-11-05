@@ -44,8 +44,21 @@ public class ReviewServlet extends HttpServlet {
             case "new":
                 req.getRequestDispatcher("/review-form.jsp").forward(req, resp);
                 break;
-            case "edit":
-                Review r = dao.findById(req.getParameter("id"));
+
+            case "view": {
+                // anyone can open the details page of a single review
+                Review found = dao.findById(trim(req.getParameter("id")));
+                if (found == null) {
+                    resp.sendRedirect("review?msg=Review+not+found");
+                    return;
+                }
+                req.setAttribute("review", found);
+                req.getRequestDispatcher("/review-view.jsp").forward(req, resp);
+                break;
+            }
+
+            case "edit": {
+                Review r = dao.findById(trim(req.getParameter("id")));
                 if (r == null) {
                     resp.sendRedirect("review?msg=Review+not+found");
                     return;
@@ -53,6 +66,8 @@ public class ReviewServlet extends HttpServlet {
                 req.setAttribute("review", r);
                 req.getRequestDispatcher("/review-form.jsp").forward(req, resp);
                 break;
+            }
+
             default:
                 req.setAttribute("reviews", dao.getAll());
                 req.getRequestDispatcher("/review-list.jsp").forward(req, resp);
