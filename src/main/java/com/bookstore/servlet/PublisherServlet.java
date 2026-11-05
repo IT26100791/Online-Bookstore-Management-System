@@ -1,112 +1,201 @@
 package com.bookstore.servlet;
 
 import com.bookstore.dao.PublisherDAO;
+import com.bookstore.model.InternationalPublisher;
+import com.bookstore.model.LocalPublisher;
 import com.bookstore.model.Publisher;
+import com.bookstore.model.PublisherFactory;
 import com.bookstore.util.SessionUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.*;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.List;
 
+/**
+ * Handles the Publisher pages.
+ * <ul>
+ *   <li>GET  list (default), view, new, edit</li>
+ *   <li>POST add, update, delete</li>
+ * </ul>
+ * Everyone can list and view; creating, editing and deleting are Admin only.
+ */
 @WebServlet("/publisher")
 public class PublisherServlet extends HttpServlet {
+
+    private static final String LIST_JSP = "/publisher-list.jsp";
+    private static final String FORM_JSP = "/publisher-form.jsp";
+    private static final String VIEW_JSP = "/publisher-view.jsp";
+
     private PublisherDAO dao;
 
     @Override
     public void init() {
-        // Using the updated default constructor
         dao = new PublisherDAO();
     }
+
+    // ================================================================ GET
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        String action = req.getParameter("action");
-        if (action == null) action = "list";
+        String action = trim(req.getParameter("action"));
+        if (action.isEmpty()) {
+            action = "list";
+        }
         req.setAttribute("msg", req.getParameter("msg"));
+        req.setAttribute("status", req.getParameter("status"));
 
-        // customers can only view the list; add/edit pages are Admin only
         if (("new".equals(action) || "edit".equals(action)) && !SessionUtil.isAdmin(req)) {
-            resp.sendRedirect("publisher?msg=Access+denied");
+            redirectWithMessage(resp, "Only admins can add or edit publishers.", false);
             return;
         }
 
         switch (action) {
             case "new":
-                req.getRequestDispatcher("/publisher-form.jsp").forward(req, resp);
+                req.setAttribute("editing", false);
+                req.getRequestDispatcher(FORM_JSP).forward(req, resp);
                 break;
             case "edit":
-                Publisher p = dao.findById(req.getParameter("id"));
-                if (p == null) {
-                    resp.sendRedirect("publisher?msg=Publisher+not+found");
-                    return;
-                }
-                req.setAttribute("publisher", p);
-                req.getRequestDispatcher("/publisher-form.jsp").forward(req, resp);
+                showEditForm(req, resp);
+                break;
+            case "view":
+                showDetails(req, resp);
                 break;
             default:
-                req.setAttribute("publishers", dao.findAll());
-                req.getRequestDispatcher("/publisher-list.jsp").forward(req, resp);
+                showList(req, resp);
         }
     }
+
+    private void showList(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        String keyword = trim(req.getParameter("q"));
+        String type = trim(req.getParameter("type")).toUpperCase();
+        if (!LocalPublisher.TYPE.equals(type) && !InternationalPublisher.TYPE.equals(type)) {
+            type = "";
+        }
+
+        List<Publisher> all = dao.findAll();
+        int localCount = 0;
+        int internationalCount = 0;
+        for (Publisher p : all) {
+            if (LocalPublisher.TYPE.equals(p.getType())) {
+                localCount++;
+            } else if (InternationalPublisher.TYPE.equals(p.getType())) {
+                internationalCount++;
+            }
+        }
+
+        req.setAttribute("publishers", dao.search(keyword, type));
+        req.setAttribute("searchText", keyword);
+        req.setAttribute("typeFilter", type);
+        req.setAttribute("totalCount", all.size());
+        req.setAttribute("localCount", localCount);
+        req.setAttribute("internationalCount", internationalCount);
+        req.getRequestDispatcher(LIST_JSP).forward(req, resp);
+    }
+
+    private void showEditForm(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        Publisher publisher = dao.findById(req.getParameter("id"));
+        if (publisher == null) {
+            redirectWithMessage(resp, "Publisher not found.", false);
+            return;
+        }
+        req.setAttribute("publisher", publisher);
+        req.setAttribute("editing", true);
+        req.getRequestDispatcher(FORM_JSP).forward(req, resp);
+    }
+
+    private void showDetails(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        Publisher publisher = dao.findById(req.getParameter("id"));
+        if (publisher == null) {
+            redirectWithMessage(resp, "Publisher not found.", false);
+            return;
+        }
+        req.setAttribute("publisher", publisher);
+        req.getRequestDispatcher(VIEW_JSP).forward(req, resp);
+    }
+
+    // ================================================================ POST
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
 
-        // add / update / delete are Admin only
         if (!SessionUtil.isAdmin(req)) {
-            resp.sendRedirect("publisher?msg=Access+denied");
+            redirectWithMessage(resp, "Only admins can change publishers.", false);
             return;
         }
 
-        String action = req.getParameter("action");
-        String id = trim(req.getParameter("id"));
-        String name = trim(req.getParameter("name"));
-        String phone = trim(req.getParameter("phone"));
-
-        switch (action == null ? "" : action) {
+        switch (trim(req.getParameter("action"))) {
             case "add":
-            case "update": {
-                boolean isUpdate = "update".equals(action);
-                String back = isUpdate ? "publisher?action=edit&id=" + enc(id) : "publisher?action=new";
-
-                if (id.isEmpty() || name.isEmpty() || phone.isEmpty()) {
-                    resp.sendRedirect(back + "&msg=All+fields+are+required");
-                    return;
-                }
-                if (id.contains(",") || name.contains(",") || phone.contains(",")) {
-                    resp.sendRedirect(back + "&msg=Commas+are+not+allowed");
-                    return;
-                }
-
-                Publisher publisher = new Publisher(id, name, phone);
-                if (isUpdate) {
-                    boolean ok = dao.update(publisher);
-                    resp.sendRedirect("publisher?msg=" + (ok ? "Publisher+updated" : "Publisher+not+found"));
-                } else {
-                    boolean ok = dao.add(publisher);
-                    resp.sendRedirect(ok ? "publisher?msg=Publisher+added" : back + "&msg=Publisher+ID+already+exists");
-                }
+                save(req, resp, false);
                 break;
-            }
+            case "update":
+                save(req, resp, true);
+                break;
             case "delete":
-                boolean deleted = dao.delete(id);
-                resp.sendRedirect("publisher?msg=" + (deleted ? "Publisher+deleted" : "Publisher+not+found"));
+                boolean deleted = dao.delete(trim(req.getParameter("id")));
+                redirectWithMessage(resp, deleted ? "Publisher deleted." : "Publisher not found.", deleted);
                 break;
             default:
                 resp.sendRedirect("publisher");
         }
     }
 
-    private String trim(String s) {
-        return s == null ? "" : s.trim();
+    /** Validation lives in the model; this method only reports the outcome. */
+    private void save(HttpServletRequest req, HttpServletResponse resp, boolean isUpdate)
+            throws ServletException, IOException {
+        String id = trim(req.getParameter("id"));
+        String name = trim(req.getParameter("name"));
+        String phone = trim(req.getParameter("phone"));
+        String type = trim(req.getParameter("type"));
+        String extra = trim(req.getParameter("extra"));
+
+        try {
+            Publisher publisher = PublisherFactory.create(type, id, name, phone, extra);
+            if (isUpdate) {
+                boolean updated = dao.update(publisher);
+                redirectWithMessage(resp, updated ? "Publisher updated." : "Publisher not found.", updated);
+            } else if (dao.add(publisher)) {
+                redirectWithMessage(resp, "Publisher added.", true);
+            } else {
+                showFormError(req, resp, isUpdate, "Publisher ID " + id + " is already in use. Choose a different ID.");
+            }
+        } catch (IllegalArgumentException e) {
+            showFormError(req, resp, isUpdate, e.getMessage());
+        }
     }
 
-    private String enc(String s) throws IOException {
-        return URLEncoder.encode(s, "UTF-8");
+    /** Shows the form again with the error and everything the admin already typed. */
+    private void showFormError(HttpServletRequest req, HttpServletResponse resp,
+                               boolean isUpdate, String error) throws ServletException, IOException {
+        req.setAttribute("editing", isUpdate);
+        req.setAttribute("formError", error);
+        req.setAttribute("formId", trim(req.getParameter("id")));
+        req.setAttribute("formName", trim(req.getParameter("name")));
+        req.setAttribute("formPhone", trim(req.getParameter("phone")));
+        req.setAttribute("formType", trim(req.getParameter("type")).toUpperCase());
+        req.setAttribute("formExtra", trim(req.getParameter("extra")));
+        req.getRequestDispatcher(FORM_JSP).forward(req, resp);
+    }
+
+    // ================================================================ helpers
+
+    private void redirectWithMessage(HttpServletResponse resp, String message, boolean success)
+            throws IOException {
+        resp.sendRedirect("publisher?msg=" + URLEncoder.encode(message, "UTF-8")
+                + "&status=" + (success ? "success" : "error"));
+    }
+
+    private String trim(String s) {
+        return s == null ? "" : s.trim();
     }
 }
