@@ -1,23 +1,37 @@
 package com.bookstore.model;
 
-/** A publisher based in another country. */
+/** A publisher based in another country. Its extra detail is the country. */
 public class InternationalPublisher extends Publisher {
+
+    public static final String TYPE = "INTERNATIONAL";
+
     private String country;
 
     public InternationalPublisher(String id, String name, String phone, String country) {
         super(id, name, phone);
-        setCountry(country);
+        this.country = cleanText(country, "Country", MAX_EXTRA_LENGTH);
+    }
+
+    public String getCountry() {
+        return country;
     }
 
     public void setCountry(String country) {
-        if (country == null || country.trim().isEmpty()) {
-            throw new IllegalArgumentException("Country cannot be empty.");
-        }
-        this.country = country.trim().replace(",", " ");
+        this.country = cleanText(country, "Country", MAX_EXTRA_LENGTH);
     }
 
-    @Override public String getType() { return "INTERNATIONAL"; }
-    @Override public String getExtraLabel() { return "Country"; }
-    @Override public String getExtra() { return country; }
-}
+    @Override
+    public String getType() {
+        return TYPE;
+    }
 
+    @Override
+    public String getExtraLabel() {
+        return "Country";
+    }
+
+    @Override
+    public String getExtra() {
+        return country;
+    }
+}
