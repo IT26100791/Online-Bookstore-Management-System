@@ -14,6 +14,11 @@ import java.net.URLEncoder;
 
 @WebServlet("/review")
 public class ReviewServlet extends HttpServlet {
+    // sensible upper limits so one review can never make a huge line in reviews.txt
+    private static final int MAX_ID = 30;
+    private static final int MAX_TITLE = 200;
+    private static final int MAX_COMMENT = 1000;
+
     private ReviewDAO dao;
 
     @Override
