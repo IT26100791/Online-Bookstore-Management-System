@@ -1,0 +1,214 @@
+/*
+ * Publisher module styles.
+ * Loaded after aura.css. It only uses translucent white and inherited text colour,
+ * so every page keeps the existing Aura colour scheme.
+ */
+
+/* ---------- Page header ---------- */
+.pub-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.pub-header h2 { margin-bottom: .25rem; }
+.pub-header-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+/* ---------- Flash message ---------- */
+.pub-flash {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+/* ---------- Summary tiles ---------- */
+.pub-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+}
+.pub-stat {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    padding: .9rem 1.1rem;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .12);
+}
+.pub-stat-icon {
+    flex: none;
+    width: 2.6rem;
+    height: 2.6rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .14);
+}
+.pub-stat-value { font-size: 1.7rem; font-weight: 700; line-height: 1; }
+.pub-stat-label { font-size: .85rem; opacity: .75; }
+
+/* ---------- Search and filters ---------- */
+.pub-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem 1rem;
+    margin-bottom: 1rem;
+}
+.pub-search {
+    position: relative;
+    display: flex;
+    flex: 1 1 300px;
+    max-width: 460px;
+    gap: .5rem;
+}
+.pub-search-field { position: relative; flex: 1; }
+.pub-search-field i {
+    position: absolute;
+    left: .9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: .6;
+    pointer-events: none;
+}
+.pub-search-field input { padding-left: 2.5rem; }
+
+.pub-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.pub-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .35rem .85rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, .25);
+    color: inherit;
+    font-size: .9rem;
+    text-decoration: none;
+}
+.pub-chip:hover { background: rgba(255, 255, 255, .1); color: inherit; }
+.pub-chip.active {
+    background: rgba(255, 255, 255, .2);
+    border-color: rgba(255, 255, 255, .65);
+    font-weight: 700;
+}
+.pub-chip-count { font-size: .8rem; opacity: .75; }
+
+.pub-result-note { font-size: .9rem; opacity: .8; margin-bottom: .75rem; }
+
+/* ---------- Table ---------- */
+.pub-name-cell { display: flex; align-items: center; gap: .7rem; }
+.pub-name-link { color: inherit; font-weight: 600; text-decoration: none; }
+.pub-name-link:hover { color: inherit; text-decoration: underline; }
+.pub-id { font-variant-numeric: tabular-nums; opacity: .85; }
+.pub-tel {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(255, 255, 255, .45);
+}
+.pub-tel:hover { color: inherit; border-bottom-style: solid; }
+.pub-actions { display: inline-flex; align-items: center; justify-content: center; gap: .35rem; }
+.pub-actions form { display: inline; margin: 0; }
+
+.pub-avatar {
+    flex: none;
+    width: 2.3rem;
+    height: 2.3rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .15);
+    font-weight: 700;
+}
+.pub-avatar-lg { width: 4.25rem; height: 4.25rem; font-size: 1.7rem; }
+
+/* ---------- Empty state ---------- */
+.pub-empty { text-align: center; padding: 2.5rem 1rem; }
+.pub-empty i { font-size: 2rem; opacity: .6; margin-bottom: .75rem; }
+.pub-empty h3 { font-size: 1.2rem; margin-bottom: .35rem; }
+.pub-empty p { opacity: .8; margin-bottom: 1rem; }
+
+/* ---------- Delete confirmation ---------- */
+.pub-dialog {
+    width: calc(100% - 2rem);
+    max-width: 430px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 16px;
+    background: rgba(18, 18, 24, .96);
+    color: #fff;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+}
+.pub-dialog::backdrop { background: rgba(0, 0, 0, .6); backdrop-filter: blur(3px); }
+.pub-dialog form { padding: 1.5rem; margin: 0; }
+.pub-dialog h3 { font-size: 1.25rem; margin-bottom: .5rem; }
+.pub-dialog p { opacity: .85; margin-bottom: 0; }
+.pub-dialog-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: 1.25rem; }
+
+/* ---------- Form ---------- */
+.field-hint { margin-top: .3rem; font-size: .85rem; color: rgba(255, 255, 255, .65); }
+
+.type-picker { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.type-card { position: relative; margin: 0; cursor: pointer; }
+.type-card input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+.type-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    height: 100%;
+    padding: .85rem 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, .2);
+    background: rgba(255, 255, 255, .04);
+    transition: border-color .15s, background .15s;
+}
+.type-card-body i { font-size: 1.1rem; margin-bottom: .25rem; }
+.type-card-body small { opacity: .75; }
+.type-card input:checked + .type-card-body {
+    border-color: rgba(255, 255, 255, .8);
+    background: rgba(255, 255, 255, .14);
+}
+
+/* ---------- Detail page ---------- */
+.pub-profile { display: flex; align-items: center; gap: 1.1rem; margin-bottom: 1.25rem; }
+.pub-profile h2 { margin: 0 0 .25rem; }
+.pub-profile-id { opacity: .75; font-size: .95rem; }
+.pub-detail-list { margin: 0 0 1.5rem; }
+.pub-detail-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .8rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .1);
+}
+.pub-detail-row dt { font-weight: 400; opacity: .7; }
+.pub-detail-row dd { margin: 0; text-align: right; }
+
+/* ---------- Accessibility and small screens ---------- */
+.pub-chip:focus-visible,
+.pub-name-link:focus-visible,
+.pub-tel:focus-visible,
+.type-card input:focus-visible + .type-card-body {
+    outline: 2px solid rgba(255, 255, 255, .9);
+    outline-offset: 2px;
+}
+@media (max-width: 575.98px) {
+    .type-picker { grid-template-columns: 1fr; }
+    .pub-search { max-width: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .type-card-body { transition: none; }
+}
