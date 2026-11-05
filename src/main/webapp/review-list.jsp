@@ -79,11 +79,12 @@
     String msg = (String) request.getAttribute("msg");
 
     int rvTotal = (reviews == null) ? 0 : reviews.size();
-    int rvSum = 0, rvFive = 0;
+    int rvSum = 0, rvFive = 0, rvVerified = 0;
     if (reviews != null) {
         for (Review rv : reviews) {
             rvSum += rv.getRating();
             if (rv.getRating() == 5) rvFive++;
+            if ("VERIFIED".equalsIgnoreCase(rv.getType())) rvVerified++;
         }
     }
     double rvAvg = rvTotal == 0 ? 0 : (double) rvSum / rvTotal;
@@ -140,6 +141,13 @@
                     <div class="rv-stat-label">5-star reviews</div>
                 </div>
             </div>
+            <div class="rv-stat">
+                <div class="rv-stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+                <div>
+                    <div class="rv-stat-value"><%= rvVerified %></div>
+                    <div class="rv-stat-label">Verified purchases</div>
+                </div>
+            </div>
         </div>
 
         <!-- search / filter / sort -->
@@ -156,6 +164,11 @@
                 <option value="3">3 stars</option>
                 <option value="2">2 stars</option>
                 <option value="1">1 star</option>
+            </select>
+            <select id="rvType" class="form-select" aria-label="Filter by review type">
+                <option value="all">All types</option>
+                <option value="VERIFIED">Verified purchase</option>
+                <option value="PUBLIC">Public</option>
             </select>
             <select id="rvSort" class="form-select" aria-label="Sort reviews">
                 <option value="default">Default order</option>
@@ -182,8 +195,9 @@
                         for (Review r : reviews) {
                             int stars = r.getRating();
                             String rvBadge = r.getBadge();
+                            boolean rvIsVerified = "VERIFIED".equalsIgnoreCase(r.getType());
                 %>
-                <tr data-rating="<%= stars %>">
+                <tr data-rating="<%= stars %>" data-type="<%= esc(r.getType()) %>">
                     <td class="rv-num"><%= String.format("%02d", n++) %></td>
                     <td><span class="rv-id"><%= esc(r.getReviewId()) %></span></td>
                     <td><span class="rv-book"><i class="fa-solid fa-book me-2 opacity-50"></i><%= esc(r.getBookTitle()) %></span></td>
@@ -199,7 +213,9 @@
                         <div class="rv-reviewer">
                             <i class="fa-solid fa-circle-user opacity-50"></i><%= esc(r.getReviewer()) %>
                             <% if (rvBadge != null && !rvBadge.isEmpty()) { %>
-                                <span class="badge bg-secondary"><%= esc(rvBadge) %></span>
+                                <span class="badge bg-secondary">
+                                    <% if (rvIsVerified) { %><i class="fa-solid fa-circle-check me-1"></i><% } %><%= esc(rvBadge) %>
+                                </span>
                             <% } %>
                         </div>
                         <div class="rv-text" title="Click to expand / collapse"><%= esc(r.getComment()) %></div>
@@ -260,6 +276,7 @@
         if (!tbody || !none || !q) return;
 
         var f = document.getElementById('rvFilter');
+        var t = document.getElementById('rvType');
         var s = document.getElementById('rvSort');
         var c = document.getElementById('rvCount');
         var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr[data-rating]'));
@@ -272,6 +289,7 @@
         function refresh() {
             var term = q.value.trim().toLowerCase();
             var rating = f.value;
+            var type = t.value;
             var mode = s.value;
 
             var list = rows.slice();
@@ -286,8 +304,9 @@
             list.forEach(function (r) {
                 tbody.insertBefore(r, none);
                 var okRating = (rating === 'all') || (r.getAttribute('data-rating') === rating);
+                var okType = (type === 'all') || (r.getAttribute('data-type') === type);
                 var okText = !term || r.textContent.toLowerCase().indexOf(term) !== -1;
-                var visible = okRating && okText;
+                var visible = okRating && okType && okText;
                 r.hidden = !visible;
                 if (visible) { shown++; r.cells[0].textContent = pad(shown); }
             });
@@ -298,6 +317,7 @@
 
         q.addEventListener('input', refresh);
         f.addEventListener('change', refresh);
+        t.addEventListener('change', refresh);
         s.addEventListener('change', refresh);
 
         // click a comment to expand / collapse it
