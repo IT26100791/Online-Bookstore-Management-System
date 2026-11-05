@@ -20,6 +20,11 @@
     String fvId = editing ? review.getReviewId() : (formId != null ? formId : "");
     String fvBook = formBook != null ? formBook : (editing ? review.getBookTitle() : "");
     String fvComment = formComment != null ? formComment : (editing ? review.getComment() : "");
+    String formType = (String) request.getAttribute("formType");
+    String formReviewer = (String) request.getAttribute("formReviewer");
+    String fvType = formType != null ? formType.toUpperCase() : (editing ? review.getType() : "PUBLIC");
+    if (!"VERIFIED".equals(fvType)) fvType = "PUBLIC";
+    String fvReviewer = formReviewer != null ? formReviewer : (editing ? review.getReviewer() : "");
     String currentRating = editing ? String.valueOf(review.getRating()) : "5";
     if (formRating != null && formRating.matches("[1-5]")) currentRating = formRating;
 %>
@@ -69,6 +74,10 @@
         .rv-stars input:focus-visible + label { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 6px; }
         .rv-rating-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
         .rv-rating-text { font-weight: 600; opacity: .85; }
+
+        /* review type switch */
+        .rv-type { display: flex; flex-wrap: wrap; gap: 8px; }
+        .rv-type .btn { display: inline-flex; align-items: center; gap: 8px; }
 
         .rv-counter { text-align: right; font-size: .8rem; opacity: .6; margin-top: 4px; }
 
@@ -121,6 +130,32 @@
                     <div class="invalid-feedback">Required. Commas (,) are not allowed.</div>
                 </div>
             </div>
+
+            <% if (canEdit) { %>
+            <!-- Admin only: review type + reviewer name -->
+            <div class="mb-3">
+                <label class="form-label d-block">Review Type</label>
+                <div class="rv-type" role="radiogroup" aria-label="Review type">
+                    <input type="radio" class="btn-check" name="type" id="typePublic" value="PUBLIC" <%= "PUBLIC".equals(fvType) ? "checked" : "" %>>
+                    <label class="btn btn-outline-light" for="typePublic"><i class="fa-solid fa-users"></i>Public</label>
+
+                    <input type="radio" class="btn-check" name="type" id="typeVerified" value="VERIFIED" <%= "VERIFIED".equals(fvType) ? "checked" : "" %>>
+                    <label class="btn btn-outline-light" for="typeVerified"><i class="fa-solid fa-circle-check"></i>Verified purchase</label>
+                </div>
+                <div class="rv-hint">Verified = a reader who bought this book. Public = anyone.</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="rvReviewer">Reviewer Name</label>
+                <div class="rv-field">
+                    <i class="fa-solid fa-circle-user"></i>
+                    <input type="text" name="reviewer" id="rvReviewer" class="form-control" maxlength="50"
+                           placeholder="Leave empty to use your own username" value="<%= esc(fvReviewer) %>">
+                </div>
+            </div>
+            <% } else { %>
+            <div class="rv-hint mb-3"><i class="fa-solid fa-circle-info me-1"></i>Your review will be added as a Public review under your username.</div>
+            <% } %>
 
             <div class="mb-3">
                 <label class="form-label d-block">Rating</label>
