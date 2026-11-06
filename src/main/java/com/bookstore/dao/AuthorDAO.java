@@ -7,6 +7,7 @@ import com.bookstore.util.DataPaths;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.net.URLDecoder;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +37,14 @@ public class AuthorDAO {
         return new LocalAuthor(id, name, email);
     }
 
+    // same factory, plus the optional photo file name and description
+    public Author createAuthor(String id, String name, String email, String type, String photo, String bio) {
+        Author a = createAuthor(id, name, email, type);
+        a.setPhoto(photo);
+        a.setBio(bio);
+        return a;
+    }
+
     public synchronized List<Author> findAll() throws IOException {
         List<Author> authors = new ArrayList<>();
         try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
@@ -45,7 +54,10 @@ public class AuthorDAO {
                 if (d.length >= 3) {
                     // old 3-column lines (before types existed) are treated as Local
                     String type = d.length >= 4 ? d[3].trim() : "Local";
-                    authors.add(createAuthor(d[0].trim(), d[1].trim(), d[2].trim(), type));
+                    Author a = createAuthor(d[0].trim(), d[1].trim(), d[2].trim(), type);
+                    if (d.length >= 5) a.setPhoto(d[4].trim());
+                    if (d.length >= 6) a.setBio(decode(d[5]));
+                    authors.add(a);
                 }
             }
         }
@@ -87,6 +99,14 @@ public class AuthorDAO {
         boolean removed = authors.removeIf(a -> a.getId().equalsIgnoreCase(id));
         if (removed) writeAll(authors);
         return removed;
+    }
+
+    private static String decode(String s) {
+        try {
+            return URLDecoder.decode(s, "UTF-8");
+        } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+            return s;
+        }
     }
 
     private void writeAll(List<Author> authors) throws IOException {

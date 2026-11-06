@@ -17,6 +17,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Great+Vibes&family=Lato:wght@400;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<%= request.getContextPath() %>/css/aura.css">
+    <style>
+        .au-thumb { display: block; width: 44px; height: 44px; object-fit: cover; border-radius: 50%; border: 1px solid var(--line); }
+        .au-initial { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: hsl(var(--h, 30) 45% 32%); border: 1px solid rgba(255, 255, 255, .22); color: #fff; font-family: var(--display); font-weight: 600; }
+        .au-about { max-width: 280px; color: var(--muted); font-size: .9rem; }
+    </style>
 </head>
 <body class="aura">
 <% boolean canEdit = com.bookstore.util.SessionUtil.isAdmin(request); %>
@@ -31,6 +36,7 @@
             </div>
             <div>
                 <a href="index.jsp" class="btn btn-outline-light me-2"><i class="fa-solid fa-house me-1"></i>Home</a>
+                <a href="author?action=cards" class="btn btn-outline-light me-2"><i class="fa-solid fa-table-cells-large me-1"></i>Cards view</a>
                 <% if (canEdit) { %>
 <a href="author?action=new" class="btn btn-primary">
                     <i class="fa-solid fa-plus me-2"></i>Add New Author
@@ -48,7 +54,7 @@
             <table class="table table-dark-glass table-hover rounded overflow-hidden">
                 <thead>
                 <tr>
-                    <th>#</th><th>Author ID</th><th>Name</th><th>Email</th><th>Type</th><th>Description</th>
+                    <th>#</th><th>Photo</th><th>Author ID</th><th>Name</th><th>Email</th><th>Type</th><th>Description</th><th>About</th>
                     <% if (canEdit) { %><th class="text-center">Actions</th><% } %>
                 </tr>
                 </thead>
@@ -61,11 +67,24 @@
                 %>
                 <tr>
                     <td><%= String.format("%02d", n++) %></td>
+                    <td>
+                        <% if (a.hasPhoto()) { %>
+                        <img class="au-thumb" alt="Photo of <%= esc(a.getName()) %>" loading="lazy"
+                             src="author?action=photo&name=<%= java.net.URLEncoder.encode(a.getPhoto(), "UTF-8") %>">
+                        <% } else { %>
+                        <span class="au-initial" style="--h:<%= Math.abs(a.getName().hashCode()) % 360 %>"><%= a.getName().isEmpty() ? "?" : esc(a.getName().substring(0, 1).toUpperCase()) %></span>
+                        <% } %>
+                    </td>
                     <td><%= esc(a.getId()) %></td>
                     <td><%= esc(a.getName()) %></td>
-                    <td><%= esc(a.getEmail()) %></td>
+                    <td><%= a.getEmail().isEmpty() ? "<span class=\"opacity-50\">&mdash;</span>" : esc(a.getEmail()) %></td>
                     <td><span class="badge <%= "International".equalsIgnoreCase(a.getAuthorType()) ? "bg-success" : "bg-secondary" %>"><%= esc(a.getAuthorType()) %></span></td>
                     <td><%= esc(a.getTypeDescription()) %></td>
+                    <%
+                        String auBio = a.getBio().replace("\r", " ").replace("\n", " ");
+                        String auShort = auBio.length() > 90 ? auBio.substring(0, 90) + "\u2026" : auBio;
+                    %>
+                    <td class="au-about" title="<%= esc(auBio) %>"><%= auBio.isEmpty() ? "<span class=\"opacity-50\">&mdash;</span>" : esc(auShort) %></td>
                     <% if (canEdit) { %>
 <td class="text-center">
                         <a class="btn btn-sm btn-warning btn-action me-1"
@@ -82,12 +101,23 @@
                 </tr>
                 <%      }
                     } else { %>
-                <tr><td colspan="<%= canEdit ? 7 : 6 %>" class="text-center opacity-75">No authors yet.</td></tr>
+                <tr><td colspan="<%= canEdit ? 9 : 8 %>" class="text-center opacity-75">No authors yet.</td></tr>
                 <% } %>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+<script>
+document.querySelectorAll('img.au-thumb').forEach(function (img) {
+    img.addEventListener('error', function () {
+        var s = document.createElement('span');
+        s.className = 'au-initial';
+        s.textContent = (img.alt.replace('Photo of ', '').charAt(0) || '?').toUpperCase();
+        img.replaceWith(s);
+    });
+});
+</script>
 </body>
 </html>
+

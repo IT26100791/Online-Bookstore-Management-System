@@ -1,10 +1,15 @@
 package com.bookstore.model;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
 public class Author {
     private String authorId;
     private String name;
-    private String email;
+    private String email;        // optional - may be empty
     private String authorType;   // "Local" or "International"
+    private String photo = "";   // saved photo file name, empty when there is no photo
+    private String bio = "";     // optional description about the author
 
     public Author(String authorId, String name, String email, String authorType) {
         this.authorId = authorId;
@@ -34,7 +39,7 @@ public class Author {
     }
 
     public String getEmail() {
-        return email;
+        return email == null ? "" : email;
     }
 
     public void setEmail(String email) {
@@ -49,13 +54,45 @@ public class Author {
         this.authorType = authorType;
     }
 
+    public String getPhoto() {
+        return photo == null ? "" : photo;
+    }
+
+    public void setPhoto(String photo) {
+        this.photo = photo == null ? "" : photo;
+    }
+
+    public boolean hasPhoto() {
+        return !getPhoto().isEmpty();
+    }
+
+    public String getBio() {
+        return bio == null ? "" : bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio == null ? "" : bio;
+    }
+
     // overridden by LocalAuthor and InternationalAuthor
     public String getTypeDescription() {
         return "Standard author";
     }
 
-    // one line in authors.txt:  id,name,email,type
+    // one line in authors.txt:  id,name,email,type[,photo,bio]
+    // The bio can contain commas and new lines, so it is stored URL-encoded.
+    // An author without photo and bio is still written in the old 4-field format.
     public String toFileLine() {
-        return authorId + "," + name + "," + email + "," + authorType;
+        String line = authorId + "," + name + "," + getEmail() + "," + authorType;
+        if (getPhoto().isEmpty() && getBio().isEmpty()) return line;
+        return line + "," + getPhoto() + "," + encode(getBio());
+    }
+
+    private static String encode(String s) {
+        try {
+            return URLEncoder.encode(s, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }
