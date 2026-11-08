@@ -34,9 +34,9 @@ public class OrderDAO {
         try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
             String line;
             while ((line = reader.readLine()) != null) {
-                String[] d = line.split(",", -1);
-                if (d.length >= 4) {
-                    orders.add(new Order(d[0].trim(), d[1].trim(), d[2].trim(), d[3].trim()));
+                Order order = Order.fromFileLine(line);   // returns the right subclass
+                if (order != null) {
+                    orders.add(order);
                 }
             }
         }
