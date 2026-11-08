@@ -1,7 +1,12 @@
 package com.bookstore.servlet;
 
+import com.bookstore.dao.AuthorDAO;
 import com.bookstore.dao.BookDAO;
+import com.bookstore.model.Author;
 import com.bookstore.model.Book;
+import com.bookstore.model.BookFactory;
+import com.bookstore.model.EBook;
+import com.bookstore.model.PrintedBook;
 import com.bookstore.util.DataPaths;
 import com.bookstore.util.SessionUtil;
 
@@ -23,14 +28,16 @@ import java.util.Locale;
 @MultipartConfig(maxFileSize = 3 * 1024 * 1024, maxRequestSize = 4 * 1024 * 1024)
 public class BookServlet extends HttpServlet {
     private static final List<String> IMAGE_TYPES = Arrays.asList("jpg", "jpeg", "png", "gif", "webp");
+    private static final int MAX_DESCRIPTION = 1000;
 
     private BookDAO dao;
+    private AuthorDAO authorDao;
     private File imageDir;
 
     @Override
     public void init() {
-        // Using the updated default constructor
-        dao = new BookDAO();
+        authorDao = new AuthorDAO();
+        dao = new BookDAO(DataPaths.dataDir(), authorDao);
         // uploaded covers are kept in the data folder (next to books.txt), so redeploying never wipes them
         imageDir = new File(DataPaths.dataDir(), "book-images");
         if (!imageDir.exists()) imageDir.mkdirs();
@@ -43,8 +50,8 @@ public class BookServlet extends HttpServlet {
         if (action == null) action = "list";
         req.setAttribute("msg", req.getParameter("msg"));
 
-        // customers can browse and see covers; add/edit pages are Admin only
-        if (("new".equals(action) || "edit".equals(action)) && !SessionUtil.isAdmin(req)) {
+        // customers can browse and see covers / details; add/edit/delete pages/actions are Admin only
+        if (("new".equals(action) || "edit".equals(action) || "delete".equals(action)) && !SessionUtil.isAdmin(req)) {
             resp.sendRedirect("book?msg=Access+denied");
             return;
         }
@@ -53,21 +60,37 @@ public class BookServlet extends HttpServlet {
             case "image":
                 serveImage(req, resp);
                 break;
+            case "view": {
+                Book book = dao.findById(req.getParameter("id"));
+                if (book == null) {
+                    resp.sendRedirect("book?msg=Book+not+found");
+                    return;
+                }
+                req.setAttribute("book", book);
+                req.getRequestDispatcher("/book-details.jsp").forward(req, resp);
+                break;
+            }
             case "new":
+                req.setAttribute("authors", authorDao.findAll());
                 req.getRequestDispatcher("/book-form.jsp").forward(req, resp);
                 break;
-            case "edit":
+            case "edit": {
                 Book b = dao.findById(req.getParameter("id"));
                 if (b == null) {
                     resp.sendRedirect("book?msg=Book+not+found");
                     return;
                 }
                 req.setAttribute("book", b);
+                req.setAttribute("authors", authorDao.findAll());
                 req.getRequestDispatcher("/book-form.jsp").forward(req, resp);
                 break;
-            default:
-                req.setAttribute("books", dao.findAll());
+            }
+            default: {
+                String query = trim(req.getParameter("q"));
+                req.setAttribute("query", query);
+                req.setAttribute("books", dao.search(query));
                 req.getRequestDispatcher("/book-list.jsp").forward(req, resp);
+            }
         }
     }
 
@@ -76,7 +99,7 @@ public class BookServlet extends HttpServlet {
             throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
 
-        // add / update / delete are Admin only
+        // Enforce admin access on the server for every action that changes book data
         if (!SessionUtil.isAdmin(req)) {
             resp.sendRedirect("book?msg=Access+denied");
             return;
@@ -98,6 +121,13 @@ public class BookServlet extends HttpServlet {
         String title = trim(req.getParameter("title"));
         String genre = trim(req.getParameter("genre"));
         String price = trim(req.getParameter("price"));
+        String authorId = trim(req.getParameter("authorId"));
+        if (authorId.isEmpty()) {
+            authorId = trim(req.getParameter("author"));
+        }
+        String description = trim(req.getParameter("description")).replace("\r\n", "\n");
+        String type = trim(req.getParameter("type")).toUpperCase(Locale.ROOT);
+        String format = trim(req.getParameter("format"));
 
         switch (action == null ? "" : action) {
             case "add":
@@ -106,11 +136,28 @@ public class BookServlet extends HttpServlet {
                 String back = isUpdate ? "book?action=edit&id=" + enc(id) : "book?action=new";
 
                 if (id.isEmpty() || title.isEmpty() || genre.isEmpty() || price.isEmpty()) {
-                    resp.sendRedirect(back + "&msg=All+fields+are+required");
+                    resp.sendRedirect(back + "&msg=All+fields+except+description+are+required");
+                    return;
+                }
+                if (authorId.isEmpty()) {
+                    resp.sendRedirect(back + "&msg=Please+select+an+author");
+                    return;
+                }
+                Author author = authorDao.findById(authorId);
+                if (author == null) {
+                    resp.sendRedirect(back + "&msg=Selected+author+does+not+exist");
                     return;
                 }
                 if (id.contains(",") || title.contains(",") || genre.contains(",") || price.contains(",")) {
-                    resp.sendRedirect(back + "&msg=Commas+are+not+allowed");
+                    resp.sendRedirect(back + "&msg=Commas+are+not+allowed+in+ID%2C+title%2C+genre+or+price");
+                    return;
+                }
+                if (description.length() > MAX_DESCRIPTION) {
+                    resp.sendRedirect(back + "&msg=Description+is+too+long+%28max+1000+characters%29");
+                    return;
+                }
+                if (!isValidFormat(type, format)) {
+                    resp.sendRedirect(back + "&msg=Please+choose+a+valid+book+type+and+format");
                     return;
                 }
                 try {
@@ -143,7 +190,8 @@ public class BookServlet extends HttpServlet {
                 }
                 boolean newImageSaved = !image.equals(oldImage);
 
-                Book book = new Book(id, title, genre, price, image);
+                // the factory returns a PrintedBook or an EBook (polymorphism), linked to the Author object
+                Book book = BookFactory.create(type, id, title, genre, price, image, author, description, format);
                 if (isUpdate) {
                     boolean ok = dao.update(book);
                     if (newImageSaved) deleteImage(ok ? oldImage : image);
@@ -165,6 +213,14 @@ public class BookServlet extends HttpServlet {
             default:
                 resp.sendRedirect("book");
         }
+    }
+
+    // ---- validation ----
+
+    private boolean isValidFormat(String type, String format) {
+        if (PrintedBook.TYPE.equals(type)) return PrintedBook.BINDINGS.contains(format);
+        if (EBook.TYPE.equals(type)) return EBook.FILE_FORMATS.contains(format);
+        return false;
     }
 
     // ---- cover image helpers ----
