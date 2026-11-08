@@ -1,5 +1,5 @@
 /* =========================================================
-   Aura Books - User Management interface helpers
+   Regent Books - User Management interface helpers
    Put this file at:  webapp/js/user-ui.js
    Loaded by: login, register, forgot-password, profile, edit, users-list, welcome
    Front-end only: it never changes what a form sends to the server.
