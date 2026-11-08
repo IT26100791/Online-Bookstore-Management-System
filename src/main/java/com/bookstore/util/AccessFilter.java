@@ -14,7 +14,12 @@ public class AccessFilter implements Filter {
 
     // anyone (even not logged in) may open these
     private static final List<String> PUBLIC = Arrays.asList(
-            "/login", "/login.jsp", "/logout", "/register.jsp", "/index.jsp", "/");
+            "/login", "/login.jsp", "/logout", "/register.jsp", "/index.jsp", "/",
+            "/forgot-password", "/forgot-password.jsp");
+
+    // any logged-in user (Admin or Customer) may open these: their own profile and profile photos
+    private static final List<String> ANY_LOGGED_IN = Arrays.asList(
+            "/profile", "/avatar");
 
     // customers may only READ these modules
     private static final List<String> READ_ONLY_FOR_CUSTOMER = Arrays.asList(
@@ -54,8 +59,14 @@ public class AccessFilter implements Filter {
             return;
         }
 
-        // 2. admin can do everything
-        if ("Admin".equalsIgnoreCase(user.getRole())) {
+        // 2. admin can do everything (polymorphism: each User subclass answers for itself)
+        if (user.canManageUsers()) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // 2b. own profile and profile photos: every logged-in user
+        if (ANY_LOGGED_IN.contains(path)) {
             chain.doFilter(request, response);
             return;
         }

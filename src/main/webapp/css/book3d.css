@@ -1,0 +1,262 @@
+/* =========================================================
+   Regent Books - animated 3D book for the home page hero
+   Put this file at:  webapp/css/book3d.css   (loaded only by index.jsp)
+   Pure CSS. The cover opens, five different spreads are shown
+   (bookplate, title, contents, chapter, picture, quote, verse, bookshelf, the end),
+   then the pages turn back and the book closes. Hover pauses it.
+   Uses the colours and fonts already defined in aura.css (:root).
+   ========================================================= */
+
+.book3d {
+    --bw: clamp(150px, 15vw, 200px);          /* width of ONE page  */
+    --bh: calc(var(--bw) * 1.4);              /* height of the book */
+    --cycle: 36s;
+    position: relative;
+    width: calc(var(--bw) * 2.1);
+    height: calc(var(--bh) + 120px);
+    perspective: 1700px;
+}
+
+.book3d__shadow {
+    position: absolute;
+    left: 50%;
+    bottom: 22px;
+    width: calc(var(--bw) * 1.9);
+    height: 34px;
+    margin-left: calc(var(--bw) * -.95);
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, .55), transparent);
+    filter: blur(6px);
+    animation: bkShadow var(--cycle) ease-in-out infinite;
+}
+.book3d__float {
+    position: absolute;
+    left: 50%;
+    top: calc(var(--bh) / 2 + 44px);
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+    transform: rotateX(16deg) rotateY(-10deg);
+    animation: bkFloat 7s ease-in-out infinite;
+}
+.book3d__body {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--bw);
+    height: var(--bh);
+    margin-top: calc(var(--bh) / -2);
+    transform-style: preserve-3d;
+    transform: translateX(calc(var(--bw) / -2));
+    animation: bkSlide var(--cycle) ease-in-out infinite;
+}
+
+/* every sheet of paper is hinged on the left (spine) edge */
+.bk-back, .bk-leaf, .bk-cover {
+    position: absolute;
+    inset: 0;
+    transform-origin: left center;
+    transform-style: preserve-3d;
+}
+.bk-face {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+.bk-face--back { transform: rotateY(180deg); }
+
+/* ----- paper ----- */
+.bk-back,
+.bk-paper {
+    background:
+            linear-gradient(90deg, rgba(60, 35, 20, .30), transparent 14%),
+            linear-gradient(180deg, #f7eedb, #ebdabc);
+    border-radius: 1px 4px 4px 1px;
+    box-shadow: 0 0 0 1px rgba(60, 35, 20, .18);
+}
+.bk-face--back.bk-paper {
+    background:
+            linear-gradient(270deg, rgba(60, 35, 20, .30), transparent 14%),
+            linear-gradient(180deg, #f7eedb, #ebdabc);
+    border-radius: 4px 1px 1px 4px;
+}
+
+/* ----- page content ----- */
+.bk-page {
+    position: absolute;
+    inset: 11% 10% 11% 15%;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--serif, Georgia, serif);
+    font-size: calc(var(--bw) * .066);
+    line-height: 1.32;
+    color: #4a2d22;
+}
+.bk-face--back .bk-page { inset: 11% 15% 11% 10%; }
+.bk-page p { margin: 0 0 .55em; text-align: left; }
+.bk-page p:not([class]), .bk-page .bk-dc { text-align: justify; }
+.bk-page .bk-kicker, .bk-page .bk-sub, .bk-page .bk-cap, .bk-page .bk-verse { text-align: center; }
+.bk-kicker { margin: 0 0 .2em; text-align: center; font-size: .78em; letter-spacing: .22em; text-transform: uppercase; color: #9a6a22; }
+.bk-h { margin: .1em 0 .25em; text-align: center; font-family: var(--display, Georgia, serif); font-weight: 600; font-size: 1.5em; line-height: 1.1; color: #7a2b1a; }
+.bk-h--lg { font-size: 2.1em; }
+.bk-sub { margin: 0; text-align: center; font-style: italic; color: #6b4a3a; }
+.bk-orn { position: relative; display: block; flex: none; width: 42%; height: 1px; margin: .55em auto .75em; background: linear-gradient(90deg, transparent, #b9852a, transparent); }
+.bk-orn::after { content: ""; position: absolute; left: 50%; top: 50%; width: .5em; height: .5em; background: #b9852a; transform: translate(-50%, -50%) rotate(45deg); }
+.bk-dc::first-letter { float: left; padding: .04em .1em 0 0; font-family: var(--display, Georgia, serif); font-size: 3.1em; line-height: .78; color: #7a2b1a; }
+.bk-folio { position: absolute; left: 0; right: 0; bottom: -8%; text-align: center; font-size: .9em; color: rgba(74, 45, 34, .6); }
+
+/* contents list */
+.bk-toc { margin: .3em 0 0; padding: 0; list-style: none; }
+.bk-toc li { display: flex; align-items: baseline; gap: .3em; margin-bottom: .75em; }
+.bk-toc i { flex: 1; border-bottom: 1px dotted rgba(74, 45, 34, .55); }
+.bk-toc b { font-weight: 600; color: #7a2b1a; }
+
+/* picture page (pure CSS art that matches the cover colours) */
+.bk-scene { position: relative; flex: none; height: 64%; margin-top: .3em; overflow: hidden; border-radius: 2px;
+    background: linear-gradient(#4a1f52 0%, #b4521f 58%, #e2a93b 100%);
+    box-shadow: inset 0 0 0 1px rgba(60, 35, 20, .4); }
+.bk-scene::before { content: ""; position: absolute; left: 33%; top: 34%; width: 34%; aspect-ratio: 1; border-radius: 50%;
+    background: #ffd878; box-shadow: 0 0 16px 4px rgba(255, 216, 120, .75); }
+.bk-scene b { position: absolute; inset: auto 0 0 0; height: 46%; background: #1d3a42;
+    clip-path: polygon(0 100%, 0 56%, 16% 26%, 32% 52%, 52% 16%, 72% 54%, 86% 34%, 100% 60%, 100% 100%); }
+.bk-scene i { position: absolute; bottom: 0; left: 36%; width: 28%; height: 36%; background: linear-gradient(#efe6d4, #c9b98f);
+    clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%); }
+.bk-cap { margin: .85em 0 0; text-align: center; font-style: italic; font-size: .9em; color: #6b4a3a; }
+
+/* quote + verse */
+.bk-quote { margin: auto 0; text-align: center; font-style: italic; font-size: 1.2em; }
+.bk-quote::before { content: "\201C"; display: block; font-family: var(--display, Georgia, serif); font-size: 3.2em; line-height: .55; color: #b9852a; }
+.bk-quote small { display: block; margin-top: .8em; font-size: .72em; font-style: normal; letter-spacing: .18em; text-transform: uppercase; color: #9a6a22; }
+.bk-verse { margin: .5em 0; text-align: center; font-style: italic; font-size: .95em; line-height: 1.55; }
+
+/* bookshelf */
+.bk-shelf { display: flex; align-items: flex-end; gap: 2px; height: 44%; margin: .4em 0 .2em; padding: 0 3%; border-bottom: 3px solid #7a4a2a; }
+.bk-shelf i { flex: 1; border-radius: 1px 1px 0 0; box-shadow: inset 2px 0 0 rgba(255, 255, 255, .18), inset -1px 0 0 rgba(0, 0, 0, .25); }
+.bk-shelf i:nth-child(1) { height: 76%; background: #7a2b1a; }
+.bk-shelf i:nth-child(2) { height: 92%; background: #1d5a56; }
+.bk-shelf i:nth-child(3) { height: 62%; background: #b9852a; }
+.bk-shelf i:nth-child(4) { height: 86%; background: #4a1f52; }
+.bk-shelf i:nth-child(5) { height: 70%; background: #c9692f; }
+.bk-shelf i:nth-child(6) { height: 96%; background: #25161b; }
+.bk-shelf i:nth-child(7) { height: 66%; background: #2a8c8a; }
+.bk-shelf i:nth-child(8) { height: 82%; background: #8a3552; }
+
+/* last page */
+.bk-end { justify-content: center; text-align: center; }
+.bk-ribbon { position: absolute; top: -1px; right: 16%; width: 7%; height: 26%; background: #a8232f;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%); filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .3)); }
+
+/* ----- cover ----- */
+.bk-cover .bk-face--front { border-radius: 2px 5px 5px 2px; background: #25161b; box-shadow: 0 0 0 1px rgba(244, 237, 226, .14); }
+.bk-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.bk-cover .bk-face--front::before {
+    content: ""; position: absolute; inset: 0 auto 0 0; width: 9%; z-index: 1;
+    background: linear-gradient(90deg, rgba(0, 0, 0, .55), rgba(255, 255, 255, .12) 55%, transparent);
+}
+.bk-cover .bk-face--front::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, .22) 50%, transparent 62%);
+    background-size: 260% 100%; background-position: 120% 0;
+    animation: bkGloss var(--cycle) ease-in-out infinite;
+}
+.bk-cover .bk-face--back {                    /* inside of the cover: leather + bookplate */
+    display: grid; place-items: center;
+    border-radius: 5px 2px 2px 5px;
+    background: radial-gradient(90% 60% at 50% 0, rgba(226, 169, 59, .18), transparent 70%), #3a1f2a;
+    box-shadow: inset 0 0 0 7px #2a161e, inset 0 0 0 8px rgba(226, 169, 59, .45);
+}
+.bk-plate { width: 64%; padding: .9em .5em; text-align: center; background: #efe3c8; color: #5a3526;
+    border: 1px solid #b9852a; box-shadow: 0 0 0 3px #efe3c8, 0 0 0 4px rgba(185, 133, 42, .7), 0 6px 14px rgba(0, 0, 0, .4);
+    font-family: var(--serif, Georgia, serif); font-size: calc(var(--bw) * .062); }
+.bk-plate b { display: block; font-family: 'Great Vibes', cursive; font-weight: 400; font-size: 2.5em; line-height: 1; color: #7a2b1a; }
+.bk-plate span { display: block; margin-top: .5em; letter-spacing: .14em; text-transform: uppercase; font-size: .72em; }
+
+/* ----- the animation (one 36 s loop, generated) ----- */
+.bk-back  { transform: translateZ(0); }
+.bk-cover { transform: translateZ(10px); animation: bkCover var(--cycle) ease-in-out infinite; }
+.bk-leaf--1 { transform: translateZ(8px); animation: bkLeaf1 var(--cycle) ease-in-out infinite; }
+.bk-leaf--2 { transform: translateZ(6px); animation: bkLeaf2 var(--cycle) ease-in-out infinite; }
+.bk-leaf--3 { transform: translateZ(4px); animation: bkLeaf3 var(--cycle) ease-in-out infinite; }
+.bk-leaf--4 { transform: translateZ(2px); animation: bkLeaf4 var(--cycle) ease-in-out infinite; }
+
+@keyframes bkSlide {
+    0%, 4%      { transform: translateX(calc(var(--bw) / -2)); }
+    10%, 86%    { transform: translateX(0); }
+    94%, 100%   { transform: translateX(calc(var(--bw) / -2)); }
+}
+@keyframes bkCover {
+    0%, 4%      { transform: translateZ(10px) rotateY(0deg); }
+    10%, 86%    { transform: translateZ(0px) rotateY(-180deg); }
+    94%, 100%   { transform: translateZ(10px) rotateY(0deg); }
+}
+@keyframes bkLeaf1 {
+    0%, 19%   { transform: translateZ(8px) rotateY(0deg); }
+    23%, 83% { transform: translateZ(2px) rotateY(-180deg); }
+    87%, 100% { transform: translateZ(8px) rotateY(0deg); }
+}
+
+@keyframes bkLeaf2 {
+    0%, 32%   { transform: translateZ(6px) rotateY(0deg); }
+    36%, 80% { transform: translateZ(4px) rotateY(-180deg); }
+    84%, 100% { transform: translateZ(6px) rotateY(0deg); }
+}
+
+@keyframes bkLeaf3 {
+    0%, 45%   { transform: translateZ(4px) rotateY(0deg); }
+    49%, 77% { transform: translateZ(6px) rotateY(-180deg); }
+    81%, 100% { transform: translateZ(4px) rotateY(0deg); }
+}
+
+@keyframes bkLeaf4 {
+    0%, 58%   { transform: translateZ(2px) rotateY(0deg); }
+    62%, 74% { transform: translateZ(8px) rotateY(-180deg); }
+    78%, 100% { transform: translateZ(2px) rotateY(0deg); }
+}
+
+@keyframes bkFloat {
+    0%, 100% { transform: translateY(0) rotateX(16deg) rotateY(-10deg); }
+    50%      { transform: translateY(-12px) rotateX(13deg) rotateY(-5deg); }
+}
+@keyframes bkShadow {
+    0%, 4%      { transform: scaleX(.55); opacity: .8; }
+    10%, 86%    { transform: scaleX(1);   opacity: .6; }
+    94%, 100%   { transform: scaleX(.55); opacity: .8; }
+}
+@keyframes bkGloss {
+    0%, 4%      { background-position: 120% 0; }
+    10%, 100%   { background-position: -40% 0; }
+}
+
+/* ----- golden dust floating around the book ----- */
+.bk-spark {
+    position: absolute; bottom: 70px; width: 5px; height: 5px; border-radius: 50%;
+    background: var(--gold-hi, #f3c969); box-shadow: 0 0 10px 2px rgba(226, 169, 59, .7);
+    opacity: 0; animation: bkSpark 6s ease-in infinite;
+}
+.bk-spark.s1 { left: 12%; animation-delay: 0s; }
+.bk-spark.s2 { left: 28%; animation-delay: 1.4s; width: 4px; height: 4px; }
+.bk-spark.s3 { left: 47%; animation-delay: 2.6s; }
+.bk-spark.s4 { left: 64%; animation-delay: .8s; width: 3px; height: 3px; }
+.bk-spark.s5 { left: 80%; animation-delay: 3.4s; }
+.bk-spark.s6 { left: 92%; animation-delay: 4.5s; width: 4px; height: 4px; }
+@keyframes bkSpark {
+    0%   { transform: translate(0, 0) scale(.6); opacity: 0; }
+    15%  { opacity: 1; }
+    100% { transform: translate(14px, calc(var(--bh) * -.95)) scale(1); opacity: 0; }
+}
+
+/* hover = pause, so a visitor can read the open pages */
+.book3d:hover .book3d__body,
+.book3d:hover .bk-cover,
+.book3d:hover .bk-leaf,
+.book3d:hover .book3d__shadow,
+.book3d:hover .bk-face--front::after { animation-play-state: paused; }
+
+/* motion off: show the closed book, no movement */
+@media (prefers-reduced-motion: reduce) {
+    .book3d__float, .book3d__body, .bk-cover, .bk-leaf, .book3d__shadow,
+    .bk-spark, .bk-cover .bk-face--front::after { animation: none; }
+    .bk-spark { display: none; }
+}

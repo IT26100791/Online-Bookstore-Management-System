@@ -11,13 +11,7 @@ public class PrintedBook extends Book {
     private final String binding;
 
     public PrintedBook(String id, String title, String genre, String price,
-                       String image, String authorId, String description, String binding) {
-        super(id, title, genre, price, image, authorId, description);
-        this.binding = (binding == null || binding.isEmpty()) ? BINDINGS.get(0) : binding;
-    }
-
-    public PrintedBook(String id, String title, String genre, String price,
-                       String image, Author author, String description, String binding) {
+                       String image, String author, String description, String binding) {
         super(id, title, genre, price, image, author, description);
         this.binding = (binding == null || binding.isEmpty()) ? BINDINGS.get(0) : binding;
     }

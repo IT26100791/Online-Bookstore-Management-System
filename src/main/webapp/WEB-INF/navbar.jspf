@@ -1,13 +1,14 @@
 <%@ page import="com.bookstore.model.User" %>
+<%@ page import="com.bookstore.servlet.UserServlet" %>
 <%
     User navUser = (User) session.getAttribute("loggedUser");
-    boolean navAdmin = navUser != null && "Admin".equalsIgnoreCase(navUser.getRole());
+    boolean navAdmin = navUser != null && navUser.canManageUsers();
     String navActive = (String) request.getAttribute("navActive");
     if (navActive == null) navActive = "";
 %>
 <header class="site-bar">
     <div class="site-bar__inner">
-        <a class="brand" href="index.jsp"><span class="brand-script">Aura Books</span><span class="brand-sub">Online bookstore</span></a>
+        <a class="brand" href="index.jsp"><span class="brand-script">Regent Books</span><span class="brand-sub">Online bookstore</span></a>
         <nav class="site-nav" aria-label="Main">
             <% if (navUser != null) { %>
             <a href="book"<%= "book".equals(navActive) ? " aria-current=\"page\"" : "" %>>Books</a>
@@ -25,7 +26,10 @@
             <a href="login"<%= "login".equals(navActive) ? " aria-current=\"page\"" : "" %>>Login</a>
             <a href="user?action=new"<%= "register".equals(navActive) ? " aria-current=\"page\"" : "" %>>Register</a>
             <% } else { %>
-            <span><%= navUser.getUsername().replace("<", "&lt;") %> (<%= navUser.getRole() %>)</span>
+            <a class="nav-user" href="profile" title="My profile"<%= "profile".equals(navActive) ? " aria-current=\"page\"" : "" %>>
+                <%= UserServlet.avatar(request.getContextPath(), navUser, "nav-avatar") %>
+                <span class="nav-user__name"><%= UserServlet.esc(navUser.getUsername()) %><small><%= navUser.getRole() %></small></span>
+            </a>
             <a href="logout">Logout</a>
             <% } %>
         </div>

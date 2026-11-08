@@ -11,13 +11,7 @@ public class EBook extends Book {
     private final String fileFormat;
 
     public EBook(String id, String title, String genre, String price,
-                 String image, String authorId, String description, String fileFormat) {
-        super(id, title, genre, price, image, authorId, description);
-        this.fileFormat = (fileFormat == null || fileFormat.isEmpty()) ? FILE_FORMATS.get(0) : fileFormat;
-    }
-
-    public EBook(String id, String title, String genre, String price,
-                 String image, Author author, String description, String fileFormat) {
+                 String image, String author, String description, String fileFormat) {
         super(id, title, genre, price, image, author, description);
         this.fileFormat = (fileFormat == null || fileFormat.isEmpty()) ? FILE_FORMATS.get(0) : fileFormat;
     }

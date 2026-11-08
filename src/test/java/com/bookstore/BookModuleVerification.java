@@ -69,8 +69,8 @@ public class BookModuleVerification {
         System.out.println("\nTesting PrintedBook and EBook polymorphism:");
         Author author = new Author("A001", "James Clear", "james@example.com", "International");
 
-        Book printed = new PrintedBook("B001", "Atomic Habits", "Self-Help", "2500", "cover.jpg", author, "Desc", "Hardcover");
-        Book ebook = new EBook("B002", "Digital Minimalism", "Self-Help", "1500", "", author, "Desc", "EPUB");
+        Book printed = new PrintedBook("B001", "Atomic Habits", "Self-Help", "2500", "cover.jpg", author.getId(), "Desc", "Hardcover");
+        Book ebook = new EBook("B002", "Digital Minimalism", "Self-Help", "1500", "", author.getId(), "Desc", "EPUB");
 
         assertEquals("PrintedBook getType()", "PRINTED", printed.getType());
         assertEquals("PrintedBook getTypeLabel()", "Printed book", printed.getTypeLabel());
@@ -88,7 +88,7 @@ public class BookModuleVerification {
     private static void testBookAuthorObjectRelationship() {
         System.out.println("\nTesting Book-Author OOP relationship:");
         Author author = new Author("A001", "James Clear", "james@example.com", "International");
-        Book book = new PrintedBook("B001", "Atomic Habits", "Self-Help", "2500", "cover.jpg", author, "Desc", "Hardcover");
+        Book book = new PrintedBook("B001", "Atomic Habits", "Self-Help", "2500", "cover.jpg", author.getId(), "Desc", "Hardcover");
 
         assertTrue("Book hasAuthor() is true", book.hasAuthor());
         assertEquals("Book author ID matches author.getId()", "A001", book.getAuthorId());
@@ -176,9 +176,9 @@ public class BookModuleVerification {
             Author a2 = authorDao.findById("A002");
 
             // Add two books for author A001 and one for author A002
-            Book book1 = BookFactory.create("PRINTED", "BK01", "Atomic Habits", "Self-Help", "2500", "cov1.jpg", a1, "Habits guide", "Hardcover");
-            Book book2 = BookFactory.create("EBOOK", "BK02", "Clear Thinking", "Self-Help", "1800", "", a1, "Mindset", "EPUB");
-            Book book3 = BookFactory.create("PRINTED", "BK03", "Sherlock Holmes Sinhala", "Mystery", "1600", "cov3.jpg", a2, "Sinhala translation", "Paperback");
+            Book book1 = BookFactory.create("PRINTED", "BK01", "Atomic Habits", "Self-Help", "2500", "cov1.jpg", a1.getId(), "Habits guide", "Hardcover");
+            Book book2 = BookFactory.create("EBOOK", "BK02", "Clear Thinking", "Self-Help", "1800", "", a1.getId(), "Mindset", "EPUB");
+            Book book3 = BookFactory.create("PRINTED", "BK03", "Sherlock Holmes Sinhala", "Mystery", "1600", "cov3.jpg", a2.getId(), "Sinhala translation", "Paperback");
 
             assertTrue("Add book1 succeeded", bookDao.add(book1));
             assertTrue("Add book2 succeeded", bookDao.add(book2));
@@ -202,7 +202,7 @@ public class BookModuleVerification {
             assertEquals("Mystery book is BK03", "BK03", searchByGenre.get(0).getId());
 
             // Update book
-            Book updatedBook1 = BookFactory.create("PRINTED", "BK01", "Atomic Habits 2nd Edition", "Self-Help", "2700", "cov1_v2.jpg", a1, "Updated edition", "Hardcover");
+            Book updatedBook1 = BookFactory.create("PRINTED", "BK01", "Atomic Habits 2nd Edition", "Self-Help", "2700", "cov1_v2.jpg", a1.getId(), "Updated edition", "Hardcover");
             assertTrue("Update book1 succeeded", bookDao.update(updatedBook1));
             Book fetched = bookDao.findById("BK01");
             assertEquals("Title updated", "Atomic Habits 2nd Edition", fetched.getTitle());
@@ -229,7 +229,7 @@ public class BookModuleVerification {
             // BK02 has unknown author "Mystery Author" (should NOT migrate, stay preserved)
             Files.writeString(booksFile,
                     "BK01,Habits,Genre,1000,,James Clear,Desc,PRINTED,Paperback\n"
-                    + "BK02,Mystery,Genre,1200,,Mystery Author,Desc,PRINTED,Paperback\n");
+                            + "BK02,Mystery,Genre,1200,,Mystery Author,Desc,PRINTED,Paperback\n");
 
             AuthorDAO authorDao = new AuthorDAO(tempDir.toString());
             BookDAO bookDao = new BookDAO(tempDir.toString(), authorDao);
