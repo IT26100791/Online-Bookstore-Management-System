@@ -1,7 +1,11 @@
 package com.bookstore.servlet;
 
+import com.bookstore.dao.BookDAO;
 import com.bookstore.dao.OrderDAO;
+import com.bookstore.model.Book;
+import com.bookstore.model.EbookOrder;
 import com.bookstore.model.Order;
+import com.bookstore.model.PhysicalOrder;
 import com.bookstore.model.User;
 import com.bookstore.util.DataPaths;
 
@@ -31,11 +35,13 @@ public class OrderServlet extends HttpServlet {
     private static final Set<String> RECEIPT_TYPES = new HashSet<>(Arrays.asList("jpg", "jpeg", "png", "pdf"));
 
     private OrderDAO dao;
+    private BookDAO bookDao;
     private Path receiptDir;     // outside the web folder, so receipts are never public URLs
 
     @Override
     public void init() {
         dao = new OrderDAO();
+        bookDao = new BookDAO();
         receiptDir = Paths.get(DataPaths.dataDir(), "receipts").toAbsolutePath().normalize();
         try {
             Files.createDirectories(receiptDir);
@@ -70,6 +76,7 @@ public class OrderServlet extends HttpServlet {
 
         switch (action) {
             case "new":
+                req.setAttribute("books", bookDao.findAll());      // catalog for the book dropdown
                 req.getRequestDispatcher("/order-form.jsp").forward(req, resp);
                 break;
             case "edit": {
@@ -83,6 +90,7 @@ public class OrderServlet extends HttpServlet {
                     return;
                 }
                 req.setAttribute("order", o);
+                req.setAttribute("books", bookDao.findAll());
                 req.getRequestDispatcher("/order-form.jsp").forward(req, resp);
                 break;
             }
@@ -184,6 +192,14 @@ public class OrderServlet extends HttpServlet {
                     resp.sendRedirect(back + "&msg=All+fields+are+required");
                     return;
                 }
+                // The chosen catalog book decides the order type and the price (the browser is not trusted)
+                Book book = findBook(bookTitle);
+                if (book != null) {
+                    orderType = "EBOOK".equals(book.getType()) ? EbookOrder.TYPE_CODE : PhysicalOrder.TYPE_CODE;
+                } else if (!admin) {
+                    resp.sendRedirect(back + "&msg=Please+choose+a+book+from+the+catalog");
+                    return;
+                }
                 if (!Order.isValidType(orderType)) {
                     resp.sendRedirect(back + "&msg=Please+choose+an+order+type");
                     return;
@@ -206,8 +222,8 @@ public class OrderServlet extends HttpServlet {
                     return;
                 }
                 try {
-                    unitPrice = priceText.isEmpty() ? Order.defaultPrice(orderType)
-                            : Double.parseDouble(priceText);
+                    unitPrice = !priceText.isEmpty() ? Double.parseDouble(priceText)
+                            : book != null ? priceOf(book) : Order.defaultPrice(orderType);
                 } catch (NumberFormatException e) {
                     resp.sendRedirect(back + "&msg=Unit+price+must+be+a+number");
                     return;
@@ -285,6 +301,19 @@ public class OrderServlet extends HttpServlet {
             default:
                 resp.sendRedirect("order");
         }
+    }
+
+    // ---------- book helpers ----------
+
+    private Book findBook(String title) throws IOException {
+        for (Book b : bookDao.findAll()) {
+            if (b.getTitle().equalsIgnoreCase(title)) return b;
+        }
+        return null;
+    }
+
+    private double priceOf(Book book) {
+        return Double.parseDouble(book.getPrice().replaceAll("[^0-9.]", ""));
     }
 
     // ---------- receipt helpers ----------
