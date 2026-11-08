@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" import="java.util.*,com.bookstore.model.*" %>
 <%! private static String esc(String s) {
-    return s == null ? "" : s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
-} %>
+        return s == null ? "" : s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    } %>
 <%
     User me = (User) session.getAttribute("loggedUser");
     boolean admin = me != null && "Admin".equalsIgnoreCase(me.getRole());
@@ -13,10 +13,10 @@
     int curQty = editing ? order.getQuantity() : 1;
     String curPayment = editing ? order.getPaymentMethod() : "COD";
 
-    // Updated bank details
-    final String BANK_NAME = "Commercial Bank Colombo";
+    // TODO: replace with the shop's real bank details
+    final String BANK_NAME = "Your Bank Name - Branch";
     final String BANK_ACCOUNT_NAME = "Regent Books (Pvt) Ltd";
-    final String BANK_ACCOUNT_NO = "8031070110";
+    final String BANK_ACCOUNT_NO = "0000 0000 0000";
 
     List<String> statuses = new ArrayList<>(Arrays.asList("Pending", "Processing", "Shipped", "Delivered", "Cancelled"));
     if (editing && order.getStatus() != null && !statuses.contains(order.getStatus())) {
@@ -58,6 +58,7 @@
         .ob-estimate .total-line { font-weight: 700; font-size: 1.05rem; border-top: 1px solid rgba(255,255,255,.25);
             margin-top: .4rem; padding-top: .5rem; }
         .ob-hint { font-size: .8rem; opacity: .7; }
+        .ob-locked { pointer-events: none; }
         .ob-pay { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
         .ob-note { border-radius: 12px; padding: .9rem 1rem; background: rgba(255,255,255,.07);
             border: 1px solid rgba(255,255,255,.2); font-size: .92rem; }
@@ -70,168 +71,182 @@
 <%@ include file="/WEB-INF/navbar.jspf" %>
 
 <main class="auth-wrap">
-    <div class="auth-card">
-        <div class="text-center mb-4">
-            <i class="fa-solid fa-cart-shopping fa-3x mb-3"></i>
-            <h2 class="fw-bold"><%= editing ? "Edit Order" : "Place Order" %></h2>
-            <p class="text-light opacity-75"><%= editing ? "Update order details" : "Order a book from Regent Books" %></p>
-        </div>
+<div class="auth-card">
+    <div class="text-center mb-4">
+        <i class="fa-solid fa-cart-shopping fa-3x mb-3"></i>
+        <h2 class="fw-bold"><%= editing ? "Edit Order" : "Place Order" %></h2>
+        <p class="text-light opacity-75"><%= editing ? "Update order details" : "Order a book from Regent Books" %></p>
+    </div>
 
-        <% String msg = (String) request.getAttribute("msg");
-            if (msg != null && !msg.isEmpty()) { %>
-        <div class="alert alert-danger py-2" role="alert"><i class="fa-solid fa-circle-exclamation me-2"></i><%= esc(msg) %></div>
-        <% } %>
+    <% String msg = (String) request.getAttribute("msg");
+       if (msg != null && !msg.isEmpty()) { %>
+    <div class="alert alert-danger py-2" role="alert"><i class="fa-solid fa-circle-exclamation me-2"></i><%= esc(msg) %></div>
+    <% } %>
 
-        <form action="order" method="POST" id="orderForm" enctype="multipart/form-data">
-            <input type="hidden" name="action" value="<%= editing ? "update" : "add" %>">
+    <form action="order" method="POST" id="orderForm" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="<%= editing ? "update" : "add" %>">
 
-            <!-- Order type: selectable on new orders, fixed when editing -->
-            <div class="mb-3">
-                <label class="form-label"><i class="fa-solid fa-layer-group me-2"></i>Order Type</label>
-                <% if (editing) { %>
-                <div>
+        <!-- Order type: selectable on new orders, fixed when editing -->
+        <div class="mb-3">
+            <label class="form-label"><i class="fa-solid fa-layer-group me-2"></i>Order Type</label>
+            <% if (editing) { %>
+            <div>
                 <span class="ob-fixed-type">
                     <i class="fa-solid <%= "EBOOK".equals(curType) ? "fa-tablet-screen-button" : "fa-book" %>"></i>
                     <%= esc(order.getOrderType()) %>
                 </span>
-                    <input type="hidden" name="orderType" id="orderTypeFixed" value="<%= esc(curType) %>">
-                </div>
-                <% } else { %>
-                <div class="ob-types">
-                    <label class="ob-type">
-                        <input type="radio" name="orderType" value="PHYSICAL" checked>
-                        <span class="ob-type-body"><i class="fa-solid fa-book"></i><strong>Printed Book</strong><small>Delivered to your address</small></span>
-                    </label>
-                    <label class="ob-type">
-                        <input type="radio" name="orderType" value="EBOOK">
-                        <span class="ob-type-body"><i class="fa-solid fa-tablet-screen-button"></i><strong>E-Book</strong><small>10% off, instant download</small></span>
-                    </label>
-                </div>
-                <% } %>
-            </div>
-
-            <% if (admin) { %>
-            <div class="mb-3">
-                <label class="form-label" for="id"><i class="fa-solid fa-hashtag me-2"></i>Order ID</label>
-                <input type="text" id="id" name="id" class="form-control" placeholder="e.g. ORD001"
-                       value="<%= editing ? esc(order.getId()) : "" %>" <%= editing ? "readonly" : "" %> required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label" for="customerName"><i class="fa-solid fa-user me-2"></i>Customer Name</label>
-                <input type="text" id="customerName" name="customerName" class="form-control" placeholder="Customer username"
-                       value="<%= editing ? esc(order.getCustomerName()) : "" %>" required>
-            </div>
-            <% } %>
-
-            <div class="mb-3">
-                <label class="form-label" for="bookTitle"><i class="fa-solid fa-book-open me-2"></i>Book Title</label>
-                <input type="text" id="bookTitle" name="bookTitle" class="form-control" placeholder="Enter the book title"
-                       value="<%= editing ? esc(order.getBookTitle()) : "" %>" required>
-            </div>
-
-            <div class="row g-3 mb-3">
-                <div class="col-6">
-                    <label class="form-label" for="quantity"><i class="fa-solid fa-boxes-stacked me-2"></i>Quantity</label>
-                    <input type="number" id="quantity" name="quantity" class="form-control" min="1" max="100"
-                           value="<%= curQty %>" required>
-                </div>
-                <% if (admin) { %>
-                <div class="col-6">
-                    <label class="form-label" for="unitPrice"><i class="fa-solid fa-tag me-2"></i>Unit Price (Rs.)</label>
-                    <input type="number" id="unitPrice" name="unitPrice" class="form-control" min="0" step="0.01"
-                           placeholder="Default price"
-                           value="<%= editing ? String.format(Locale.US, "%.2f", order.getUnitPrice()) : "" %>">
-                </div>
-                <% } %>
-            </div>
-
-            <!-- Subclass-specific field: only one of these is sent (the other is disabled by the script) -->
-            <div class="mb-3" id="grpPhysical">
-                <label class="form-label" for="extraAddress"><i class="fa-solid fa-location-dot me-2"></i>Shipping Address</label>
-                <input type="text" id="extraAddress" name="extra" class="form-control" placeholder="No. 12, Galle Road, Colombo"
-                       value="<%= "PHYSICAL".equals(curType) ? esc(curExtra) : "" %>">
-                <div class="ob-hint mt-1">Commas are not allowed. Use spaces or dashes instead.</div>
-            </div>
-            <div class="mb-3" id="grpEbook">
-                <label class="form-label" for="extraFormat"><i class="fa-solid fa-file-lines me-2"></i>File Format</label>
-                <select id="extraFormat" name="extra" class="form-select">
-                    <% for (String f : EbookOrder.FORMATS) { %>
-                    <option value="<%= f %>" <%= "EBOOK".equals(curType) && f.equals(curExtra) ? "selected" : "" %>><%= f %></option>
-                    <% } %>
-                </select>
-            </div>
-
-            <!-- Payment method -->
-            <div class="mb-3">
-                <label class="form-label"><i class="fa-solid fa-credit-card me-2"></i>Payment Method</label>
-                <div class="ob-types ob-pay">
-                    <label class="ob-type" id="payCod">
-                        <input type="radio" name="paymentMethod" value="COD" <%= "COD".equals(curPayment) ? "checked" : "" %>>
-                        <span class="ob-type-body"><i class="fa-solid fa-money-bill-wave"></i><strong>Cash on Delivery</strong><small>Pay when it arrives</small></span>
-                    </label>
-                    <label class="ob-type">
-                        <input type="radio" name="paymentMethod" value="CARD" <%= "CARD".equals(curPayment) ? "checked" : "" %>>
-                        <span class="ob-type-body"><i class="fa-solid fa-credit-card"></i><strong>Online Card</strong><small>Pay by card</small></span>
-                    </label>
-                    <label class="ob-type">
-                        <input type="radio" name="paymentMethod" value="BANK" <%= "BANK".equals(curPayment) ? "checked" : "" %>>
-                        <span class="ob-type-body"><i class="fa-solid fa-building-columns"></i><strong>Bank Deposit</strong><small>Upload your receipt</small></span>
-                    </label>
-                </div>
-
-                <div class="ob-note mt-3" id="panelCard">
-                    <i class="fa-solid fa-lock me-2"></i>No card details are stored on this site.
-                </div>
-
-                <div class="ob-note mt-3" id="panelBank">
-                    <div class="fw-bold mb-2"><i class="fa-solid fa-building-columns me-2"></i>Deposit to this account</div>
-                    <div class="ob-kv-mini"><span>Bank</span><span><%= esc(BANK_NAME) %></span></div>
-                    <div class="ob-kv-mini"><span>Account name</span><span><%= esc(BANK_ACCOUNT_NAME) %></span></div>
-                    <div class="ob-kv-mini"><span>Account number</span><span><%= esc(BANK_ACCOUNT_NO) %></span></div>
-                    <label class="form-label mt-3" for="receipt"><i class="fa-solid fa-file-arrow-up me-2"></i>Deposit receipt</label>
-                    <input type="file" id="receipt" name="receipt" class="form-control"
-                           accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
-                    <div class="ob-hint mt-1">JPG, PNG or PDF, up to 2 MB.</div>
-                    <% if (editing && order.hasReceipt()) { %>
-                    <div class="ob-hint mt-1">
-                        Current receipt:
-                        <a href="order?action=receipt&id=<%= java.net.URLEncoder.encode(order.getId(), "UTF-8") %>" target="_blank" rel="noopener">view</a>.
-                        Choose a new file only if you want to replace it.
-                    </div>
-                    <% } %>
-                </div>
-            </div>
-
-            <% if (admin) { %>
-            <div class="mb-3">
-                <label class="form-label" for="status"><i class="fa-solid fa-truck me-2"></i>Status</label>
-                <select id="status" name="status" class="form-select">
-                    <% for (String s : statuses) { %>
-                    <option <%= editing && s.equals(order.getStatus()) ? "selected" : "" %>><%= esc(s) %></option>
-                    <% } %>
-                </select>
+                <input type="hidden" name="orderType" id="orderTypeFixed" value="<%= esc(curType) %>">
             </div>
             <% } else { %>
-            <p class="small text-light opacity-75 mb-3">
-                This order will be placed under your account (<strong><%= esc(me.getUsername()) %></strong>) with status <strong>Pending</strong>.
-            </p>
+            <div class="ob-types ob-locked">
+                <label class="ob-type">
+                    <input type="radio" name="orderType" value="PHYSICAL" checked>
+                    <span class="ob-type-body"><i class="fa-solid fa-book"></i><strong>Printed Book</strong><small>Delivered to your address</small></span>
+                </label>
+                <label class="ob-type">
+                    <input type="radio" name="orderType" value="EBOOK">
+                    <span class="ob-type-body"><i class="fa-solid fa-tablet-screen-button"></i><strong>E-Book</strong><small>10% off, instant download</small></span>
+                </label>
+            </div>
+            <div class="ob-hint mt-2">Set automatically from the book you choose.</div>
             <% } %>
+        </div>
 
-            <!-- Live price estimate -->
-            <div class="ob-estimate mb-4" aria-live="polite">
-                <div class="row-line"><span>Subtotal</span><span id="estSub">Rs. 0.00</span></div>
-                <div class="row-line"><span id="estAdjLabel">Shipping fee</span><span id="estAdj">Rs. 0.00</span></div>
-                <div class="row-line total-line"><span>Estimated total</span><span id="estTotal">Rs. 0.00</span></div>
+        <% if (admin) { %>
+        <div class="mb-3">
+            <label class="form-label" for="id"><i class="fa-solid fa-hashtag me-2"></i>Order ID</label>
+            <input type="text" id="id" name="id" class="form-control" placeholder="e.g. ORD001"
+                   value="<%= editing ? esc(order.getId()) : "" %>" <%= editing ? "readonly" : "" %> required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="customerName"><i class="fa-solid fa-user me-2"></i>Customer Name</label>
+            <input type="text" id="customerName" name="customerName" class="form-control" placeholder="Customer username"
+                   value="<%= editing ? esc(order.getCustomerName()) : "" %>" required>
+        </div>
+        <% } %>
+
+        <div class="mb-3">
+            <label class="form-label" for="bookTitle"><i class="fa-solid fa-book-open me-2"></i>Book Title</label>
+            <select id="bookTitle" name="bookTitle" class="form-select" required>
+                <option value="" data-price="" data-type="">Choose a book</option>
+                <% List<Book> books = (List<Book>) request.getAttribute("books");
+                   boolean listed = false;
+                   if (books != null) for (Book b : books) {
+                       String p = b.getPrice() == null ? "" : b.getPrice().replaceAll("[^0-9.]", "");
+                       boolean sel = editing && b.getTitle().equalsIgnoreCase(order.getBookTitle());
+                       listed |= sel; %>
+                <option value="<%= esc(b.getTitle()) %>" data-price="<%= p %>" data-type="<%= "EBOOK".equals(b.getType()) ? "EBOOK" : "PHYSICAL" %>" <%= sel ? "selected" : "" %>>
+                    <%= esc(b.getTitle()) %> - Rs. <%= p %> (<%= esc(b.getTypeLabel()) %>)</option>
+                <% }
+                   if (editing && !listed) { %>
+                <option value="<%= esc(order.getBookTitle()) %>" data-price="<%= String.format(Locale.US, "%.2f", order.getUnitPrice()) %>" data-type="<%= curType %>" selected><%= esc(order.getBookTitle()) %></option>
+                <% } %>
+            </select>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-6">
+                <label class="form-label" for="quantity"><i class="fa-solid fa-boxes-stacked me-2"></i>Quantity</label>
+                <input type="number" id="quantity" name="quantity" class="form-control" min="1" max="100"
+                       value="<%= curQty %>" required>
+            </div>
+            <% if (admin) { %>
+            <div class="col-6">
+                <label class="form-label" for="unitPrice"><i class="fa-solid fa-tag me-2"></i>Unit Price (Rs.)</label>
+                <input type="number" id="unitPrice" name="unitPrice" class="form-control" min="0" step="0.01"
+                       placeholder="Default price"
+                       value="<%= editing ? String.format(Locale.US, "%.2f", order.getUnitPrice()) : "" %>">
+            </div>
+            <% } %>
+        </div>
+
+        <!-- Subclass-specific field: only one of these is sent (the other is disabled by the script) -->
+        <div class="mb-3" id="grpPhysical">
+            <label class="form-label" for="extraAddress"><i class="fa-solid fa-location-dot me-2"></i>Shipping Address</label>
+            <input type="text" id="extraAddress" name="extra" class="form-control" placeholder="No. 12, Galle Road, Colombo"
+                   value="<%= "PHYSICAL".equals(curType) ? esc(curExtra) : "" %>">
+            <div class="ob-hint mt-1">Commas are not allowed. Use spaces or dashes instead.</div>
+        </div>
+        <div class="mb-3" id="grpEbook">
+            <label class="form-label" for="extraFormat"><i class="fa-solid fa-file-lines me-2"></i>File Format</label>
+            <select id="extraFormat" name="extra" class="form-select">
+                <% for (String f : EbookOrder.FORMATS) { %>
+                <option value="<%= f %>" <%= "EBOOK".equals(curType) && f.equals(curExtra) ? "selected" : "" %>><%= f %></option>
+                <% } %>
+            </select>
+        </div>
+
+        <!-- Payment method -->
+        <div class="mb-3">
+            <label class="form-label"><i class="fa-solid fa-credit-card me-2"></i>Payment Method</label>
+            <div class="ob-types ob-pay">
+                <label class="ob-type" id="payCod">
+                    <input type="radio" name="paymentMethod" value="COD" <%= "COD".equals(curPayment) ? "checked" : "" %>>
+                    <span class="ob-type-body"><i class="fa-solid fa-money-bill-wave"></i><strong>Cash on Delivery</strong><small>Pay when it arrives</small></span>
+                </label>
+                <label class="ob-type">
+                    <input type="radio" name="paymentMethod" value="CARD" <%= "CARD".equals(curPayment) ? "checked" : "" %>>
+                    <span class="ob-type-body"><i class="fa-solid fa-credit-card"></i><strong>Online Card</strong><small>Pay by card</small></span>
+                </label>
+                <label class="ob-type">
+                    <input type="radio" name="paymentMethod" value="BANK" <%= "BANK".equals(curPayment) ? "checked" : "" %>>
+                    <span class="ob-type-body"><i class="fa-solid fa-building-columns"></i><strong>Bank Deposit</strong><small>Upload your receipt</small></span>
+                </label>
             </div>
 
-            <button type="submit" class="btn btn-custom mb-3">
-                <i class="fa-solid <%= editing ? "fa-floppy-disk" : "fa-bag-shopping" %> me-2"></i><%= editing ? "Save changes" : "Place Order" %>
-            </button>
-            <div class="text-center">
-                <p class="small text-light opacity-75"><a href="order" class="text-decoration-none">Cancel</a></p>
+            <div class="ob-note mt-3" id="panelCard">
+                <i class="fa-solid fa-lock me-2"></i>No card details are stored on this site.
             </div>
-        </form>
-    </div>
+
+            <div class="ob-note mt-3" id="panelBank">
+                <div class="fw-bold mb-2"><i class="fa-solid fa-building-columns me-2"></i>Deposit to this account</div>
+                <div class="ob-kv-mini"><span>Bank</span><span><%= esc(BANK_NAME) %></span></div>
+                <div class="ob-kv-mini"><span>Account name</span><span><%= esc(BANK_ACCOUNT_NAME) %></span></div>
+                <div class="ob-kv-mini"><span>Account number</span><span><%= esc(BANK_ACCOUNT_NO) %></span></div>
+                <label class="form-label mt-3" for="receipt"><i class="fa-solid fa-file-arrow-up me-2"></i>Deposit receipt</label>
+                <input type="file" id="receipt" name="receipt" class="form-control"
+                       accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
+                <div class="ob-hint mt-1">JPG, PNG or PDF, up to 2 MB.</div>
+                <% if (editing && order.hasReceipt()) { %>
+                <div class="ob-hint mt-1">
+                    Current receipt:
+                    <a href="order?action=receipt&id=<%= java.net.URLEncoder.encode(order.getId(), "UTF-8") %>" target="_blank" rel="noopener">view</a>.
+                    Choose a new file only if you want to replace it.
+                </div>
+                <% } %>
+            </div>
+        </div>
+
+        <% if (admin) { %>
+        <div class="mb-3">
+            <label class="form-label" for="status"><i class="fa-solid fa-truck me-2"></i>Status</label>
+            <select id="status" name="status" class="form-select">
+                <% for (String s : statuses) { %>
+                <option <%= editing && s.equals(order.getStatus()) ? "selected" : "" %>><%= esc(s) %></option>
+                <% } %>
+            </select>
+        </div>
+        <% } else { %>
+        <p class="small text-light opacity-75 mb-3">
+            This order will be placed under your account (<strong><%= esc(me.getUsername()) %></strong>) with status <strong>Pending</strong>.
+        </p>
+        <% } %>
+
+        <!-- Live price estimate -->
+        <div class="ob-estimate mb-4" aria-live="polite">
+            <div class="row-line"><span>Subtotal</span><span id="estSub">Rs. 0.00</span></div>
+            <div class="row-line"><span id="estAdjLabel">Shipping fee</span><span id="estAdj">Rs. 0.00</span></div>
+            <div class="row-line total-line"><span>Estimated total</span><span id="estTotal">Rs. 0.00</span></div>
+        </div>
+
+        <button type="submit" class="btn btn-custom mb-3">
+            <i class="fa-solid <%= editing ? "fa-floppy-disk" : "fa-bag-shopping" %> me-2"></i><%= editing ? "Save changes" : "Place Order" %>
+        </button>
+        <div class="text-center">
+            <p class="small text-light opacity-75"><a href="order" class="text-decoration-none">Cancel</a></p>
+        </div>
+    </form>
+</div>
 </main>
 
 <script>
@@ -249,6 +264,7 @@
     var formatSelect = document.getElementById('extraFormat');
     var qtyInput = document.getElementById('quantity');
     var priceInput = document.getElementById('unitPrice');
+    var bookSelect = document.getElementById('bookTitle');
     var codCard = document.getElementById('payCod');
     var receiptInput = document.getElementById('receipt');
     var HAS_RECEIPT = <%= editing && order.hasReceipt() %>;
@@ -292,6 +308,10 @@
     }
 
     function refresh() {
+        var opt = bookSelect.options[bookSelect.selectedIndex];
+        var typeRadio = opt && opt.dataset.type ? form.querySelector('input[name="orderType"][value="' + opt.dataset.type + '"]') : null;
+        if (typeRadio) typeRadio.checked = true;          // the book decides Printed or E-Book
+
         var type = currentType();
         var physical = type === 'PHYSICAL';
         refreshPayment(physical);
@@ -303,9 +323,10 @@
         formatSelect.disabled = physical;
 
         var qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
-        var unit = RULES[type].price;
+        var base = (opt && opt.dataset.price) ? (parseFloat(opt.dataset.price) || 0) : RULES[type].price;
+        var unit = base;
         if (IS_ADMIN && priceInput && priceInput.value !== '') unit = parseFloat(priceInput.value) || 0;
-        if (priceInput) priceInput.placeholder = 'Default ' + money(RULES[type].price);
+        if (priceInput) priceInput.placeholder = 'Book price ' + money(base);
 
         var sub = unit * qty, adj, label;
         if (physical) {
