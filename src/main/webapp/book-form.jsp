@@ -1,4 +1,4 @@
-<%@ page contentType="text/html;charset=UTF-8" import="com.bookstore.model.Book" %>
+<%@ page contentType="text/html;charset=UTF-8" import="java.util.*,com.bookstore.model.*,com.bookstore.dao.AuthorDAO" %>
 <%!
     String esc(String s) {
         return s == null ? "" : s.replace("&", "&amp;").replace("<", "&lt;")
@@ -9,6 +9,18 @@
     Book book = (Book) request.getAttribute("book");
     boolean editing = (book != null);
     String msg = (String) request.getAttribute("msg");
+    String curType = editing ? book.getType() : PrintedBook.TYPE;
+    String curFormat = editing ? book.getFormatValue() : "";
+
+    List<Author> authors = (List<Author>) request.getAttribute("authors");
+    if (authors == null) {
+        try {
+            authors = new AuthorDAO().findAll();
+        } catch (Exception e) {
+            authors = Collections.emptyList();
+        }
+    }
+    String curAuthorId = editing ? (book.getAuthorId() != null ? book.getAuthorId() : "") : "";
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -24,13 +36,8 @@
     <link rel="stylesheet" href="<%= request.getContextPath() %>/css/aura.css">
 </head>
 <body class="aura">
-<header class="site-bar">
-    <div class="site-bar__inner">
-        <a class="brand" href="index.jsp"><span class="brand-script">Aura Books</span><span class="brand-sub">Online bookstore</span></a>
-        <nav class="site-nav" aria-label="Main"><a href="book" aria-current="page">Books</a><a href="author">Authors</a><a href="publisher">Publishers</a><a href="order">Orders</a><a href="review">Reviews</a><a href="user">Users</a></nav>
-        <div class="site-bar__end"><a href="login">Login</a><a href="user?action=new">Register</a></div>
-    </div>
-</header>
+<% request.setAttribute("navActive", "book"); %>
+<%@ include file="/WEB-INF/navbar.jspf" %>
 <div class="container">
     <div class="panel panel-narrow">
         <h2 class="fw-bold mb-4">
@@ -41,7 +48,17 @@
           <div class="alert alert-warning py-2"><%= esc(msg) %></div>
         <% } %>
 
-        <form method="post" action="book" enctype="multipart/form-data">
+        <% if (editing && book.isAuthorUnresolved()) { %>
+          <div class="alert alert-warning py-2 mb-3">
+              <i class="fa-solid fa-triangle-exclamation me-1"></i>
+              <strong>Unlinked Legacy Author:</strong>
+              This book currently has legacy author data
+              (<em><%= esc(book.getAuthorName().isEmpty() ? "Unassigned" : book.getAuthorName()) %></em>)
+              that is not linked to a registered author. Please select an existing author from the dropdown below to link it.
+          </div>
+        <% } %>
+
+        <form method="post" action="book" enctype="multipart/form-data" accept-charset="UTF-8">
             <input type="hidden" name="action" value="<%= editing ? "update" : "add" %>">
 
             <div class="mb-3">
@@ -55,19 +72,59 @@
                        value="<%= editing ? esc(book.getTitle()) : "" %>">
             </div>
             <div class="mb-3">
+                <label class="form-label">Author <span class="opacity-75">(select from registered authors)</span></label>
+                <% if (authors == null || authors.isEmpty()) { %>
+                    <div class="alert alert-danger py-2 mb-2">
+                        No registered authors found. Please create an author in the Authors section first.
+                    </div>
+                    <select name="authorId" id="authorSelect" class="form-select" required disabled>
+                        <option value="">-- No authors available --</option>
+                    </select>
+                <% } else { %>
+                    <select name="authorId" id="authorSelect" class="form-select" required>
+                        <option value="" disabled <%= curAuthorId.isEmpty() ? "selected" : "" %>>-- Select an Author --</option>
+                        <% for (Author a : authors) {
+                            boolean selected = a.getId().equalsIgnoreCase(curAuthorId);
+                        %>
+                        <option value="<%= esc(a.getId()) %>" <%= selected ? "selected" : "" %>>
+                            <%= esc(a.getName()) %> (<%= esc(a.getId()) %> - <%= esc(a.getAuthorType()) %>)
+                        </option>
+                        <% } %>
+                    </select>
+                <% } %>
+            </div>
+            <div class="mb-3">
                 <label class="form-label">Genre</label>
                 <input type="text" name="genre" class="form-control" required
                        value="<%= editing ? esc(book.getGenre()) : "" %>">
             </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Book type</label>
+                    <select name="type" id="typeSelect" class="form-select">
+                        <option value="PRINTED" <%= "PRINTED".equals(curType) ? "selected" : "" %>>Printed book</option>
+                        <option value="EBOOK" <%= "EBOOK".equals(curType) ? "selected" : "" %>>E-book</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label" id="formatLabel">Binding</label>
+                    <select name="format" id="formatSelect" class="form-select"></select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Price</label>
+                    <input type="number" step="0.01" min="0" name="price" class="form-control" required
+                           value="<%= editing ? esc(book.getPrice()) : "" %>">
+                </div>
+            </div>
             <div class="mb-3">
-                <label class="form-label">Price</label>
-                <input type="number" step="0.01" min="0" name="price" class="form-control" required
-                       value="<%= editing ? esc(book.getPrice()) : "" %>">
+                <label class="form-label">Description <span class="opacity-75">(optional, max 1000 characters)</span></label>
+                <textarea name="description" class="form-control" rows="5" maxlength="1000"
+                          placeholder="What is this book about?"><%= editing ? esc(book.getDescription()) : "" %></textarea>
             </div>
 
             <div class="mb-4">
                 <label class="form-label">Cover image <span class="opacity-75">(optional)</span></label>
-                <% if (editing && book.getImage() != null && !book.getImage().isEmpty()) { %>
+                <% if (editing && book.hasImage()) { %>
                 <div class="mb-2"><img class="thumb-lg" alt="Current cover"
                      src="book?action=image&name=<%= java.net.URLEncoder.encode(book.getImage(), "UTF-8") %>"></div>
                 <% } %>
@@ -77,13 +134,36 @@
                 <img id="coverPreview" class="thumb-lg mt-2" alt="Selected cover" hidden>
             </div>
 
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary" <%= (authors == null || authors.isEmpty()) ? "disabled" : "" %>>
                 <i class="fa-solid fa-floppy-disk me-1"></i>Save</button>
             <a href="book" class="btn btn-outline-light ms-2">Cancel</a>
         </form>
     </div>
 </div>
 <script>
+    // format choices depend on the book type
+    var FORMATS = {
+        PRINTED: {label: 'Binding', options: ['Paperback', 'Hardcover']},
+        EBOOK:   {label: 'File format', options: ['PDF', 'EPUB', 'MOBI']}
+    };
+    var typeSelect = document.getElementById('typeSelect');
+    var formatSelect = document.getElementById('formatSelect');
+
+    function fillFormats(selected) {
+        var info = FORMATS[typeSelect.value];
+        document.getElementById('formatLabel').textContent = info.label;
+        formatSelect.innerHTML = '';
+        info.options.forEach(function (name) {
+            var opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            if (name === selected) opt.selected = true;
+            formatSelect.appendChild(opt);
+        });
+    }
+    typeSelect.addEventListener('change', function () { fillFormats(''); });
+    fillFormats('<%= esc(curFormat) %>');
+
     document.getElementById('coverInput').addEventListener('change', function () {
         var preview = document.getElementById('coverPreview');
         var file = this.files && this.files[0];

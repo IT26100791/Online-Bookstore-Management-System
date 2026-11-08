@@ -29,19 +29,22 @@
             if (shelfBooks != null && !shelfBooks.isEmpty()) {
         %>
         <h2 class="shelf-title">Our catalog</h2>
-        <p class="shelf-note">Books added to the store appear here with their covers.</p>
+        <p class="shelf-note">Click a book to see its description, author and cover.</p>
         <ul class="shelf-grid">
             <% for (Book sb : shelfBooks) { %>
             <li class="book">
-                <% if (sb.getImage() != null && !sb.getImage().isEmpty()) { %>
+                <a href="book?action=view&id=<%= java.net.URLEncoder.encode(sb.getId(), "UTF-8") %>"
+                   style="color:inherit;text-decoration:none;display:block;" title="View details">
+                <% if (sb.hasImage()) { %>
                 <img class="cover-img" alt="Cover of <%= esc(sb.getTitle()) %>" loading="lazy"
                      src="book?action=image&name=<%= java.net.URLEncoder.encode(sb.getImage(), "UTF-8") %>">
                 <% } else { %>
                 <div class="cover-empty c<%= Math.abs(sb.getId().hashCode()) % 4 %>" aria-hidden="true"><%= esc(sb.getTitle()) %></div>
                 <% } %>
                 <p class="book-title"><%= esc(sb.getTitle()) %></p>
-                <p class="book-author"><%= esc(sb.getGenre()) %></p>
+                <p class="book-author"><%= esc(sb.getAuthorName().isEmpty() ? sb.getGenre() : sb.getAuthorName()) %></p>
                 <p class="book-price">Rs. <%= esc(sb.getPrice()) %></p>
+                </a>
             </li>
             <% } %>
         </ul>
@@ -85,10 +88,18 @@
             <div>
                 <a href="index.jsp" class="btn btn-outline-light me-2"><i class="fa-solid fa-house me-1"></i>Home</a>
                 <% if (canEdit) { %>
-<a href="book?action=new" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Add New Book</a>
-<% } %>
+                <a href="book?action=new" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Add New Book</a>
+                <% } %>
             </div>
         </div>
+
+        <form method="get" action="book" class="d-flex mb-3">
+            <% String q = (String) request.getAttribute("query"); %>
+            <input type="text" name="q" class="form-control me-2" placeholder="Search by title, author, genre or ID"
+                   value="<%= esc(q) %>">
+            <button type="submit" class="btn btn-primary me-2"><i class="fa-solid fa-magnifying-glass"></i></button>
+            <% if (q != null && !q.isEmpty()) { %><a href="book" class="btn btn-outline-light">Clear</a><% } %>
+        </form>
 
         <% String msg = (String) request.getAttribute("msg");
            if (msg != null && !msg.isEmpty()) { %>
@@ -99,7 +110,7 @@
             <table class="table table-dark-glass table-hover rounded overflow-hidden">
                 <thead>
                 <tr>
-                    <th>#</th><th>Cover</th><th>Book ID</th><th>Title</th><th>Genre</th><th>Price</th>
+                    <th>#</th><th>Cover</th><th>Book ID</th><th>Title</th><th>Author</th><th>Type</th><th>Genre</th><th>Price</th>
                     <% if (canEdit) { %><th class="text-center">Actions</th><% } %>
                 </tr>
                 </thead>
@@ -113,7 +124,7 @@
                 <tr>
                     <td><%= String.format("%02d", n++) %></td>
                     <td>
-                        <% if (b.getImage() != null && !b.getImage().isEmpty()) { %>
+                        <% if (b.hasImage()) { %>
                         <img class="thumb" alt="Cover of <%= esc(b.getTitle()) %>"
                              src="book?action=image&name=<%= java.net.URLEncoder.encode(b.getImage(), "UTF-8") %>">
                         <% } else { %>
@@ -121,26 +132,37 @@
                         <% } %>
                     </td>
                     <td><%= esc(b.getId()) %></td>
-                    <td><%= esc(b.getTitle()) %></td>
+                    <td><a href="book?action=view&id=<%= java.net.URLEncoder.encode(b.getId(), "UTF-8") %>"
+                           style="color:inherit;font-weight:600;"><%= esc(b.getTitle()) %></a></td>
+                    <td>
+                        <%= esc(b.getAuthorName().isEmpty() ? "Unassigned" : b.getAuthorName()) %>
+                        <% if (canEdit && b.isAuthorUnresolved()) { %>
+                            <span class="badge bg-warning text-dark ms-1" title="Legacy unlinked author">Unlinked</span>
+                        <% } %>
+                    </td>
+                    <td><%= esc(b.getTypeLabel()) %></td>
                     <td><%= esc(b.getGenre()) %></td>
                     <td><%= esc(b.getPrice()) %></td>
                     <% if (canEdit) { %>
-<td class="text-center">
+                    <td class="text-center">
+                        <a class="btn btn-sm btn-info btn-action me-1"
+                           href="book?action=view&id=<%= java.net.URLEncoder.encode(b.getId(), "UTF-8") %>" title="View details">
+                            <i class="fa-solid fa-eye"></i></a>
                         <a class="btn btn-sm btn-warning btn-action me-1"
-                           href="book?action=edit&id=<%= java.net.URLEncoder.encode(b.getId(), "UTF-8") %>">
+                           href="book?action=edit&id=<%= java.net.URLEncoder.encode(b.getId(), "UTF-8") %>" title="Edit book">
                             <i class="fa-solid fa-pen-to-square"></i></a>
                         <form method="post" action="book" style="display:inline"
                               onsubmit="return confirm('Delete this book?');">
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="id" value="<%= esc(b.getId()) %>">
-                            <button type="submit" class="btn btn-sm btn-danger btn-action"><i class="fa-solid fa-trash"></i></button>
+                            <button type="submit" class="btn btn-sm btn-danger btn-action" title="Delete book"><i class="fa-solid fa-trash"></i></button>
                         </form>
                     </td>
-<% } %>
+                    <% } %>
                 </tr>
                 <%      }
                     } else { %>
-                <tr><td colspan="<%= canEdit ? 7 : 6 %>" class="text-center opacity-75">No books yet.</td></tr>
+                <tr><td colspan="<%= canEdit ? 9 : 8 %>" class="text-center opacity-75">No books yet.</td></tr>
                 <% } %>
                 </tbody>
             </table>
@@ -149,4 +171,3 @@
 </div>
 </body>
 </html>
-
