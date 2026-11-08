@@ -15,7 +15,7 @@
 
     // Updated bank details
     final String BANK_NAME = "Commercial Bank Colombo";
-    final String BANK_ACCOUNT_NAME = "Aura Books (Pvt) Ltd";
+    final String BANK_ACCOUNT_NAME = "Regent Books (Pvt) Ltd";
     final String BANK_ACCOUNT_NO = "8031070110";
 
     List<String> statuses = new ArrayList<>(Arrays.asList("Pending", "Processing", "Shipped", "Delivered", "Cancelled"));
@@ -28,7 +28,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura Books - <%= editing ? "Edit Order" : "Place Order" %></title>
+    <title>Regent Books - <%= editing ? "Edit Order" : "Place Order" %></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -74,7 +74,7 @@
         <div class="text-center mb-4">
             <i class="fa-solid fa-cart-shopping fa-3x mb-3"></i>
             <h2 class="fw-bold"><%= editing ? "Edit Order" : "Place Order" %></h2>
-            <p class="text-light opacity-75"><%= editing ? "Update order details" : "Order a book from Aura Books" %></p>
+            <p class="text-light opacity-75"><%= editing ? "Update order details" : "Order a book from Regent Books" %></p>
         </div>
 
         <% String msg = (String) request.getAttribute("msg");
