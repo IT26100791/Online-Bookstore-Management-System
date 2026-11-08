@@ -40,7 +40,7 @@
             </div>
             <div class="col-md-8">
                 <h2 class="fw-bold mb-1"><%= esc(book.getTitle()) %></h2>
-                <p class="fs-5 mb-3"><i class="fa-solid fa-pen-nib me-2"></i>by <strong><%= esc(book.getAuthor().isEmpty() ? "Unknown author" : book.getAuthor()) %></strong></p>
+                <p class="fs-5 mb-3"><i class="fa-solid fa-pen-nib me-2"></i>by <strong><%= esc(book.getAuthorName().isEmpty() ? "Unknown author" : book.getAuthorName()) %></strong></p>
 
                 <p class="mb-1"><span class="badge bg-secondary me-2"><%= esc(book.getTypeLabel()) %></span>
                     <span class="badge bg-secondary"><%= esc(book.getGenre()) %></span></p>
