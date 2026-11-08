@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" import="java.util.*,com.bookstore.model.*" %>
 <%! private static String esc(String s) {
-    return s == null ? "" : s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
-}
+        return s == null ? "" : s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    }
     private static String money(double v) {
         return String.format(Locale.US, "Rs. %,.2f", Math.abs(v));
     }
@@ -113,7 +113,7 @@
             <% } %>
             <ol class="ob-track <%= cancelled ? "is-cancelled" : "" %>">
                 <% for (int i = 0; i < flow.size(); i++) {
-                    String cls = (!cancelled && i < current) ? "done" : (!cancelled && i == current) ? "now" : ""; %>
+                       String cls = (!cancelled && i < current) ? "done" : (!cancelled && i == current) ? "now" : ""; %>
                 <li class="ob-step <%= cls %>">
                     <div class="ob-dot"><% if ("done".equals(cls) || "now".equals(cls)) { %><i class="fa-solid fa-check"></i><% } %></div>
                     <div class="ob-step-name"><%= esc(flow.get(i)) %></div>
@@ -150,8 +150,8 @@
         </div>
 
         <% if (order.hasReceipt()) {
-            String receiptUrl = "order?action=receipt&id=" + java.net.URLEncoder.encode(order.getId(), "UTF-8");
-            boolean pdfReceipt = order.getReceiptFile().toLowerCase().endsWith(".pdf"); %>
+               String receiptUrl = "order?action=receipt&id=" + java.net.URLEncoder.encode(order.getId(), "UTF-8");
+               boolean pdfReceipt = order.getReceiptFile().toLowerCase().endsWith(".pdf"); %>
         <div class="ob-card mt-4">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                 <h5 class="mb-0"><i class="fa-solid fa-file-invoice-dollar me-2"></i>Bank deposit receipt</h5>

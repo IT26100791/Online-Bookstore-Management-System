@@ -191,7 +191,7 @@ public class BookServlet extends HttpServlet {
                 boolean newImageSaved = !image.equals(oldImage);
 
                 // the factory returns a PrintedBook or an EBook (polymorphism), linked to the Author object
-                Book book = BookFactory.create(type, id, title, genre, price, image, author, description, format);
+                Book book = BookFactory.create(type, id, title, genre, price, image, author.getId(), description, format);
                 if (isUpdate) {
                     boolean ok = dao.update(book);
                     if (newImageSaved) deleteImage(ok ? oldImage : image);
