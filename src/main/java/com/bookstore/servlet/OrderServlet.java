@@ -3,22 +3,45 @@ package com.bookstore.servlet;
 import com.bookstore.dao.OrderDAO;
 import com.bookstore.model.Order;
 import com.bookstore.model.User;
+import com.bookstore.util.DataPaths;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @WebServlet("/order")
+@MultipartConfig(fileSizeThreshold = 256 * 1024, maxFileSize = OrderServlet.MAX_RECEIPT_BYTES,
+        maxRequestSize = OrderServlet.MAX_RECEIPT_BYTES + 100 * 1024)
 public class OrderServlet extends HttpServlet {
+
+    static final int MAX_RECEIPT_BYTES = 2 * 1024 * 1024;     // 2 MB
+    private static final Set<String> RECEIPT_TYPES = new HashSet<>(Arrays.asList("jpg", "jpeg", "png", "pdf"));
+
     private OrderDAO dao;
+    private Path receiptDir;     // outside the web folder, so receipts are never public URLs
 
     @Override
     public void init() {
         dao = new OrderDAO();
+        receiptDir = Paths.get(DataPaths.dataDir(), "receipts").toAbsolutePath().normalize();
+        try {
+            Files.createDirectories(receiptDir);
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot prepare receipts folder: " + e.getMessage(), e);
+        }
     }
 
     private User currentUser(HttpServletRequest req) {
@@ -49,7 +72,7 @@ public class OrderServlet extends HttpServlet {
             case "new":
                 req.getRequestDispatcher("/order-form.jsp").forward(req, resp);
                 break;
-            case "edit":
+            case "edit": {
                 if (!admin) {                       // customers cannot edit orders
                     resp.sendRedirect("order?msg=Access+denied");
                     return;
@@ -62,7 +85,40 @@ public class OrderServlet extends HttpServlet {
                 req.setAttribute("order", o);
                 req.getRequestDispatcher("/order-form.jsp").forward(req, resp);
                 break;
-            default:
+            }
+            case "view": {                          // order details / invoice page
+                Order o = dao.findById(req.getParameter("id"));
+                if (o == null) {
+                    resp.sendRedirect("order?msg=Order+not+found");
+                    return;
+                }
+                if (!admin && !o.getCustomerName().equalsIgnoreCase(user.getUsername())) {
+                    resp.sendRedirect("order?msg=Access+denied");   // customers see only their own
+                    return;
+                }
+                req.setAttribute("order", o);
+                req.getRequestDispatcher("/order-details.jsp").forward(req, resp);
+                break;
+            }
+            case "receipt": {                       // streams the receipt to the admin or the order owner
+                Order o = dao.findById(req.getParameter("id"));
+                boolean allowed = o != null && o.hasReceipt()
+                        && (admin || o.getCustomerName().equalsIgnoreCase(user.getUsername()));
+                Path file = allowed ? receiptDir.resolve(o.getReceiptFile()).normalize() : null;
+                if (file == null || !file.startsWith(receiptDir) || !Files.isRegularFile(file)) {
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                    return;
+                }
+                String name = file.getFileName().toString().toLowerCase();
+                resp.setContentType(name.endsWith(".pdf") ? "application/pdf"
+                        : name.endsWith(".png") ? "image/png" : "image/jpeg");
+                resp.setHeader("X-Content-Type-Options", "nosniff");
+                resp.setHeader("Content-Disposition", "inline; filename=\"receipt-" + name + "\"");
+                resp.setContentLength((int) Files.size(file));
+                Files.copy(file, resp.getOutputStream());
+                return;
+            }
+            default: {
                 List<Order> all = dao.findAll();
                 if (!admin) {                       // customers see only their own orders
                     List<Order> mine = new ArrayList<>();
@@ -73,6 +129,7 @@ public class OrderServlet extends HttpServlet {
                 }
                 req.setAttribute("orders", all);
                 req.getRequestDispatcher("/order-list.jsp").forward(req, resp);
+            }
         }
     }
 
@@ -86,6 +143,10 @@ public class OrderServlet extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/login.jsp?msg=Please+login+first");
             return;
         }
+        if (req.getContentLength() > MAX_RECEIPT_BYTES + 100 * 1024) {
+            resp.sendRedirect("order?msg=Receipt+is+too+large+(max+2+MB)");
+            return;
+        }
         boolean admin = isAdmin(user);
 
         String action = req.getParameter("action");
@@ -93,6 +154,11 @@ public class OrderServlet extends HttpServlet {
         String customerName = trim(req.getParameter("customerName"));
         String bookTitle = trim(req.getParameter("bookTitle"));
         String status = trim(req.getParameter("status"));
+        String orderType = trim(req.getParameter("orderType"));
+        String extra = trim(req.getParameter("extra"));
+        String quantityText = trim(req.getParameter("quantity"));
+        String priceText = trim(req.getParameter("unitPrice"));
+        String paymentMethod = trim(req.getParameter("paymentMethod")).toUpperCase();
 
         switch (action == null ? "" : action) {
             case "add":
@@ -104,29 +170,103 @@ public class OrderServlet extends HttpServlet {
                     return;
                 }
                 if (!admin) {
-                    // customer: name and status come from the server, not from the form
+                    // customer: name, status and id come from the server, not from the form
                     customerName = user.getUsername();
                     status = "Pending";
                     id = "ORD" + System.currentTimeMillis();
+                    priceText = "";                 // price is set by the server for customers
                 }
 
                 String back = isUpdate ? "order?action=edit&id=" + enc(id) : "order?action=new";
 
-                if (id.isEmpty() || customerName.isEmpty() || bookTitle.isEmpty() || status.isEmpty()) {
+                if (id.isEmpty() || customerName.isEmpty() || bookTitle.isEmpty()
+                        || status.isEmpty() || extra.isEmpty()) {
                     resp.sendRedirect(back + "&msg=All+fields+are+required");
                     return;
                 }
-                if (id.contains(",") || customerName.contains(",") || bookTitle.contains(",") || status.contains(",")) {
+                if (!Order.isValidType(orderType)) {
+                    resp.sendRedirect(back + "&msg=Please+choose+an+order+type");
+                    return;
+                }
+                if (!Order.isValidPayment(paymentMethod)) {
+                    resp.sendRedirect(back + "&msg=Please+choose+a+payment+method");
+                    return;
+                }
+                if (hasComma(id, customerName, bookTitle, status, extra)) {
                     resp.sendRedirect(back + "&msg=Commas+are+not+allowed");
                     return;
                 }
 
-                Order order = new Order(id, customerName, bookTitle, status);
+                int quantity;
+                double unitPrice;
+                try {
+                    quantity = Integer.parseInt(quantityText);
+                } catch (NumberFormatException e) {
+                    resp.sendRedirect(back + "&msg=Quantity+must+be+a+whole+number");
+                    return;
+                }
+                try {
+                    unitPrice = priceText.isEmpty() ? Order.defaultPrice(orderType)
+                            : Double.parseDouble(priceText);
+                } catch (NumberFormatException e) {
+                    resp.sendRedirect(back + "&msg=Unit+price+must+be+a+number");
+                    return;
+                }
+
+                // ---- Bank deposit: decide which receipt file the order will point to ----
+                Order existing = isUpdate ? dao.findById(id) : null;
+                String oldReceipt = (existing == null) ? Order.NO_RECEIPT : existing.getReceiptFile();
+                String receiptName = Order.NO_RECEIPT;
+                Part upload = null;
+                boolean hasNewUpload = false;
+
+                if (Order.PAY_BANK.equals(paymentMethod)) {
+                    try {
+                        upload = req.getPart("receipt");
+                    } catch (IllegalStateException e) {
+                        resp.sendRedirect(back + "&msg=Receipt+is+too+large+(max+2+MB)");
+                        return;
+                    }
+                    hasNewUpload = upload != null && upload.getSize() > 0;
+                    if (hasNewUpload) {
+                        String ext = extensionOf(upload.getSubmittedFileName());
+                        if (!RECEIPT_TYPES.contains(ext) || !looksLikeReceipt(upload, ext)) {
+                            resp.sendRedirect(back + "&msg=Receipt+must+be+a+JPG,+PNG+or+PDF+file");
+                            return;
+                        }
+                        receiptName = safeName(id) + "_" + System.currentTimeMillis() + "." + ext;
+                    } else if (!Order.NO_RECEIPT.equals(oldReceipt)) {
+                        receiptName = oldReceipt;           // keep the receipt that is already saved
+                    } else {
+                        resp.sendRedirect(back + "&msg=Please+upload+your+bank+deposit+receipt");
+                        return;
+                    }
+                }
+
+                Order order;
+                try {
+                    // Servlet only talks to the abstract Order; Order.create picks the subclass
+                    order = Order.create(orderType, id, customerName, bookTitle,
+                            status, quantity, unitPrice, extra, paymentMethod, receiptName);
+                } catch (IllegalArgumentException e) {
+                    resp.sendRedirect(back + "&msg=" + enc(e.getMessage()));
+                    return;
+                }
+
+                if (hasNewUpload) {
+                    try (InputStream in = upload.getInputStream()) {
+                        Files.copy(in, receiptDir.resolve(receiptName), StandardCopyOption.REPLACE_EXISTING);
+                    }
+                }
+
                 if (isUpdate) {
                     boolean ok = dao.update(order);
+                    if (ok && !oldReceipt.equals(receiptName)) deleteReceipt(oldReceipt);
+                    if (!ok && hasNewUpload) deleteReceipt(receiptName);
                     resp.sendRedirect("order?msg=" + (ok ? "Order+updated" : "Order+not+found"));
                 } else {
                     boolean ok = dao.add(order);
+                    if (!ok && hasNewUpload) deleteReceipt(receiptName);
                     resp.sendRedirect(ok ? "order?msg=Order+placed" : back + "&msg=Order+ID+already+exists");
                 }
                 break;
@@ -136,13 +276,61 @@ public class OrderServlet extends HttpServlet {
                     resp.sendRedirect("order?msg=Access+denied");
                     return;
                 }
+                Order existing = dao.findById(id);
                 boolean deleted = dao.delete(id);
+                if (deleted && existing != null) deleteReceipt(existing.getReceiptFile());
                 resp.sendRedirect("order?msg=" + (deleted ? "Order+deleted" : "Order+not+found"));
                 break;
             }
             default:
                 resp.sendRedirect("order");
         }
+    }
+
+    // ---------- receipt helpers ----------
+
+    private String extensionOf(String fileName) {
+        if (fileName == null) return "";
+        int dot = fileName.lastIndexOf('.');
+        return dot < 0 ? "" : fileName.substring(dot + 1).toLowerCase();
+    }
+
+    private String safeName(String s) {
+        return s.replaceAll("[^A-Za-z0-9_-]", "_");
+    }
+
+    /** Checks the first bytes of the upload, so a renamed .exe cannot pass as a .jpg */
+    private boolean looksLikeReceipt(Part part, String ext) throws IOException {
+        byte[] b = new byte[4];
+        try (InputStream in = part.getInputStream()) {
+            if (in.read(b) < 4) return false;
+        }
+        boolean jpg = (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF;
+        boolean png = (b[0] & 0xFF) == 0x89 && b[1] == 'P' && b[2] == 'N' && b[3] == 'G';
+        boolean pdf = b[0] == '%' && b[1] == 'P' && b[2] == 'D' && b[3] == 'F';
+        switch (ext) {
+            case "jpg":
+            case "jpeg": return jpg;
+            case "png":  return png;
+            default:     return pdf;
+        }
+    }
+
+    private void deleteReceipt(String fileName) {
+        if (fileName == null || Order.NO_RECEIPT.equals(fileName)) return;
+        try {
+            Path p = receiptDir.resolve(fileName).normalize();
+            if (p.startsWith(receiptDir)) Files.deleteIfExists(p);
+        } catch (IOException ignored) {
+            // a leftover file is harmless; the order itself is already saved
+        }
+    }
+
+    private boolean hasComma(String... values) {
+        for (String v : values) {
+            if (v.contains(",")) return true;
+        }
+        return false;
     }
 
     private String trim(String s) {
@@ -153,4 +341,3 @@ public class OrderServlet extends HttpServlet {
         return URLEncoder.encode(s, "UTF-8");
     }
 }
-
