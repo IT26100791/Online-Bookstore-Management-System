@@ -2,19 +2,7 @@ package com.bookstore.model;
 
 import java.util.Locale;
 
-/**
- * Abstract base class for every publisher in the bookstore.
- *
- * <p>OOP concepts demonstrated here:</p>
- * <ul>
- *   <li><b>Abstraction</b> - the class cannot be instantiated; subclasses must say what
- *       kind of publisher they are and what extra detail they carry.</li>
- *   <li><b>Encapsulation / information hiding</b> - all fields are private, the ID is
- *       immutable, and every value is validated before it is stored.</li>
- *   <li><b>Polymorphism</b> - callers work with {@code Publisher} and the correct
- *       subclass behaviour runs ({@link #getType()}, {@link #getExtra()}, {@link #toFileLine()}).</li>
- * </ul>
- */
+
 public abstract class Publisher {
 
     /** Separator used in publishers.txt. Values must never contain it. */

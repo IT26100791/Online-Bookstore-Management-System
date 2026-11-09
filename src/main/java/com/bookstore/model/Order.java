@@ -3,17 +3,7 @@ package com.bookstore.model;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Abstract base class for every order in the bookstore.
- *
- * OOP concepts used here:
- *  - Abstraction     : abstract methods describe WHAT a subclass must provide.
- *  - Static factory  : create() / fromFileLine() choose the right subclass, so callers only use Order.
- *  - Encapsulation   : all fields are private and final; they are read only through getters.
- *  - Information hiding : validation lives in the constructor, so an invalid Order can never exist.
- *  - Inheritance     : PhysicalOrder and EbookOrder extend this class.
- *  - Polymorphism    : calculateTotal() / toFileLine() call the subclass versions of the abstract methods.
- */
+
 public abstract class Order {
 
     private final String id;

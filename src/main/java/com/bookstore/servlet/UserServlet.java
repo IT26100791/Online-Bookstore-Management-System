@@ -27,15 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-/**
- * The ONE servlet of the user module. URLs:
- *   /login /logout            login, logout
- *   /user                     register (Create), list + search (Read), edit (Update), delete (Delete)  [admin]
- *   /profile                  every user manages their own details, photo and password
- *   /forgot-password          reset a forgotten password with the security question
- *   /avatar?u=name            sends a profile photo (logged-in users only)
- * Multipart is on only so the forms can upload a profile photo.
- */
+
 @WebServlet(urlPatterns = {"/user", "/login", "/logout", "/profile", "/forgot-password", "/avatar"})
 @MultipartConfig(fileSizeThreshold = 256 * 1024,
         maxFileSize = UserDAO.MAX_AVATAR_BYTES,

@@ -16,14 +16,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.List;
 
-/**
- * Handles the Publisher pages.
- * <ul>
- *   <li>GET  list (default), view, new, edit</li>
- *   <li>POST add, update, delete</li>
- * </ul>
- * Everyone can list and view; creating, editing and deleting are Admin only.
- */
+
 @WebServlet("/publisher")
 public class PublisherServlet extends HttpServlet {
 

@@ -17,15 +17,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * File-based data access for publishers (publishers.txt).
- *
- * <p>Line format: {@code id,name,phone,TYPE,extra}. Older three-column lines
- * ({@code id,name,phone}) are still read and are treated as local publishers
- * until they are edited and saved.</p>
- *
- * <p>The file format is hidden inside this class: callers only see {@link Publisher} objects.</p>
- */
 public class PublisherDAO {
 
     private static final String FILE_NAME = "publishers.txt";

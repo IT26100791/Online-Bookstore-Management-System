@@ -23,12 +23,7 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-/**
- * File based DAO.
- *  - users.txt   : username,passwordHash,role,email,avatarFile,securityQuestion,securityAnswerHash
- *                  (old files with only 3 columns still work)
- *  - avatars/    : profile photos (random file names)
- */
+
 public class UserDAO {
     public static final long MAX_AVATAR_BYTES = 2L * 1024 * 1024;   // 2 MB
     private static final Pattern SAFE_AVATAR = Pattern.compile("^[0-9a-f]{32}\\.(jpg|png|gif|webp)$");

@@ -1,6 +1,6 @@
 package com.bookstore.model;
 
-/** Inheritance: a Customer IS-A User with normal (read / order / review) permissions. */
+
 public class Customer extends User {
     private static final long serialVersionUID = 1L;
 

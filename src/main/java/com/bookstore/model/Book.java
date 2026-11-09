@@ -2,13 +2,7 @@ package com.bookstore.model;
 
 import com.bookstore.util.TextCodec;
 
-/**
- * Abstract parent of every book in the store.
- * Common data (id, title, genre, price, image, description) lives here (encapsulation).
- * Represents an OOP relationship: each book is linked to one Author (aggregation/association).
- * Format-specific properties are implemented by subclasses {@link PrintedBook} and {@link EBook}
- * (inheritance + polymorphism).
- */
+
 public abstract class Book {
     private final String id;
     private final String title;

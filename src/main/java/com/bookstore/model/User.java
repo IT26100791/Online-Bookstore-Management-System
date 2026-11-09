@@ -5,15 +5,7 @@ import com.bookstore.util.PasswordUtil;
 import java.io.Serializable;
 import java.util.Locale;
 
-/**
- * Abstract base class for every account in the system.
- *
- *  - Abstraction   : abstract methods say WHAT a user can do, subclasses decide HOW.
- *  - Encapsulation : all fields are private; passwords are checked with checkPassword().
- *  - Info hiding   : username is final, the role is fixed by the subclass (no setRole).
- *  - Inheritance   : Admin and Customer extend this class.
- *  - Polymorphism  : servlet/JSP only use "User"; behaviour comes from the subclass.
- */
+
 public abstract class User implements Comparable<User>, Serializable {
     private static final long serialVersionUID = 3L;
 

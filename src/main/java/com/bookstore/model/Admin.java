@@ -1,6 +1,6 @@
 package com.bookstore.model;
 
-/** Inheritance: an Admin IS-A User that is allowed to manage everything. */
+
 public class Admin extends User {
     private static final long serialVersionUID = 1L;
 
